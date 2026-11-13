@@ -224,13 +224,6 @@ No se afirma haber escrito sin asistencia los fragmentos apoyados por IA.
 La autoría humana y porcentajes deben declararse con sus nombres reales en el informe,
 sin atribuir todo el código generado a un integrante.
 
-## Pendientes de la entrega académica, fuera de ejecutar la aplicación
-
-- Completar el informe ES2 en su plantilla con capturas reales.
-- Registrar nombres, aportes y coordinación reales de ambos integrantes.
-- Preparar la defensa individual y repasar el flujo de registros y conexiones.
-- Comprobar la configuración de Supabase desde el computador del compañero.
-- Entregar el ZIP del código sin .env, .venv, .git, claves ni datos personales.
 
 ## Documentación
 
