@@ -1,5 +1,57 @@
 # EcoTech — Evaluación Sumativa 2
 
+## Avance individual E3 en la rama e3/munoz
+
+La consulta de clima permite buscar y seleccionar un lugar por nombre. Requiere
+la configuración PostgreSQL de `.env` descrita más abajo para guardar resultados
+en Supabase. `.env` conserva sus valores locales y no se sube al repositorio.
+
+Para crear únicamente la tabla adicional de clima en una base de E2 existente:
+
+~~~powershell
+python probar_clima.py --inicializar-clima
+~~~
+
+Esta operación ejecuta `datos/clima.sql` y puede repetirse sin borrar datos.
+No es necesario volver a ejecutar el esquema completo de E2. La consola utiliza
+la conexión PostgreSQL propietaria existente; la nueva tabla tiene RLS habilitado
+y no se configura acceso público mediante la Data API.
+
+Para consultar y guardar el clima:
+
+~~~powershell
+python probar_clima.py
+~~~
+
+El repositorio `repositorio/clima_repo.py` utiliza parámetros separados del SQL.
+La restricción única por latitud, longitud y fecha meteorológica permite actualizar
+una consulta repetida sin duplicarla. Las coordenadas se almacenan con seis
+decimales. Una fecha meteorológica distinta conserva un registro nuevo.
+Una respuesta obtenida antes no reemplaza otra obtenida después para la misma clave.
+
+`fecha_clima` es la hora meteorológica del servicio en `America/Santiago`;
+`obtenido_en` registra cuándo recibimos la respuesta, con zona horaria UTC.
+El guardado se confirma al salir correctamente de la transacción. Si falla, se
+informa que no se confirmó, conservando la visualización de los datos recibidos.
+La conexión tiene un timeout de 10 segundos; las consultas de clima tienen un
+límite de ejecución de 10 segundos y de espera de bloqueos de 5 segundos.
+
+Este script es una prueba de desarrollo. Todavía quedan pendientes el respaldo
+local sin conexión y la integración de esta funcionalidad al menú autenticado.
+
+Para comprobar duplicados después de consultar dos veces el mismo lugar, revisar
+en el SQL Editor de Supabase:
+
+~~~sql
+SELECT latitud, longitud, fecha_clima, COUNT(*) AS cantidad
+FROM ecotech.clima
+GROUP BY latitud, longitud, fecha_clima
+HAVING COUNT(*) > 1;
+~~~
+
+La consulta no debe devolver filas. Si entre las dos ejecuciones cambió la fecha
+meteorológica enviada por la API, es correcto conservar dos registros distintos.
+
 Aplicación de consola en Python basada en el UML de ES1. Administra empleados,
 departamentos, proyectos, cuentas y horas con persistencia PostgreSQL en Supabase.
 Los informes PDF y Excel conservan la jerarquía aportada por el compañero del equipo.
