@@ -1,5 +1,9 @@
-from werkzeug.security import generate_password_hash, check_password_hash
+from argon2 import PasswordHasher
+from argon2.exceptions import HashingError, InvalidHashError, VerificationError
 from dominio.validaciones import identificador, texto
+
+
+_hasher = PasswordHasher()
 
 
 class CuentaUsuario:
@@ -27,14 +31,17 @@ class CuentaUsuario:
             raise ValueError("La contraseña no puede estar vacía")
         if len(contrasena) > 1024:
             raise ValueError("La contraseña es demasiado larga")
-        return generate_password_hash(contrasena, method="pbkdf2:sha256:600000")
+        try:
+            return _hasher.hash(contrasena)
+        except HashingError as error:
+            raise ValueError("No se pudo generar el hash de la contraseña") from error
 
     def verificar_contrasena(self, contrasena: str) -> bool:
         if not isinstance(contrasena, str) or len(contrasena) > 1024:
             return False
         try:
-            return check_password_hash(self.__contrasena_hash, contrasena)
-        except (ValueError, TypeError):
+            return _hasher.verify(self.__contrasena_hash, contrasena)
+        except (VerificationError, InvalidHashError, ValueError, TypeError):
             return False
 
     def autorizar(self, modulo: str) -> bool:

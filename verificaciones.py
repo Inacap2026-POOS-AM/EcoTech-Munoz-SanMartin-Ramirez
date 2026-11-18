@@ -7,7 +7,7 @@ from pathlib import Path
 from secrets import token_urlsafe
 from tempfile import TemporaryDirectory
 from unittest import TestCase, TestLoader, TestSuite, TextTestRunner
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from uuid import uuid4
 import sys
 
@@ -31,7 +31,7 @@ from repositorio.proyecto_repo import ProyectoRepositorio
 from repositorio.cuenta_usuario_repo import CuentaUsuarioRepositorio
 from repositorio.registro_tiempo_repo import RegistroTiempoRepositorio
 from repositorio.sistema_repo import SistemaRepositorio
-from servicios import GestionEcoTech, Sesion, autenticar
+from servicios import GestionEcoTech, Sesion, autenticar, cerrar_sesion
 
 
 def empleado_prueba(nombre="Empleado de prueba"):
@@ -99,6 +99,7 @@ class DominioTest(TestCase):
         clave = token_urlsafe(20)
         hash1 = CuentaUsuario.generar_hash(clave)
         hash2 = CuentaUsuario.generar_hash(clave)
+        self.assertTrue(hash1.startswith("$argon2id$"))
         self.assertNotEqual(hash1, hash2)
         self.assertNotIn(clave, hash1)
         cuenta = CuentaUsuario(1, "usuario", hash1, "empleado")
@@ -110,6 +111,21 @@ class DominioTest(TestCase):
         empleado_prueba().asignar_cuenta(cuenta)
         with self.assertRaises(ValueError):
             empleado_prueba("Otro").asignar_cuenta(cuenta)
+
+    def test_hash_invalido_y_login_argon2(self):
+        clave = token_urlsafe(20)
+        for invalido in ("$argon2id$invalido", "no-es-un-hash", "pbkdf2:sha256:600000$sal$invalido"):
+            cuenta = CuentaUsuario(1, "usuario", invalido, "empleado")
+            self.assertFalse(cuenta.verificar_contrasena(clave))
+        cuenta = CuentaUsuario(1, "usuario", CuentaUsuario.generar_hash(clave), "empleado")
+        repo = MagicMock()
+        repo.obtener_por_usuario.return_value = cuenta
+        repo.obtener_empleado_id.return_value = 2
+        with patch("servicios.obtener_conexion"), patch("servicios.CuentaUsuarioRepositorio", return_value=repo):
+            self.assertIsNone(autenticar("usuario", clave + "x"))
+            sesion = autenticar("usuario", clave)
+            self.assertIsNotNone(sesion)
+            cerrar_sesion(sesion)
 
     def test_informes_reales_y_polimorfismo(self):
         empleado = empleado_prueba()

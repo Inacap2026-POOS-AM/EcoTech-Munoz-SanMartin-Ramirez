@@ -2,6 +2,21 @@
 
 ## Avance individual E3 en la rama e3/munoz
 
+### Contraseñas con Argon2id
+
+Instalar las dependencias actualizadas con `python -m pip install -r requirements.txt`.
+Las cuentas nuevas y los cambios de contraseña usan `argon2-cffi`, con Argon2id y
+sal aleatoria generada automáticamente. Se almacena el hash, nunca la contraseña.
+
+La versión actual utiliza únicamente Argon2: no verifica hashes PBKDF2 anteriores
+ni depende de Werkzeug. Tras el reinicio de datos solicitado, ejecutar `python main.py`
+y completar el registro del primer administrador. Las cuentas nuevas conservan su
+contraseña mediante un hash Argon2id, sin guardar el texto original.
+
+Las comprobaciones de salt, verificación y rechazo de hashes inválidos se ejecutan con
+`python main.py --verificar-local`. La auditoría histórica de E2 que figura más
+abajo describe las decisiones anteriores a este cambio.
+
 La consulta de clima permite buscar y seleccionar un lugar por nombre. Requiere
 la configuración PostgreSQL de `.env` descrita más abajo para guardar resultados
 en Supabase. `.env` conserva sus valores locales y no se sube al repositorio.
