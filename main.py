@@ -1,5 +1,6 @@
 """Aplicación por consola de EcoTech. Ejecutar desde la carpeta del proyecto."""
 import argparse
+import logging
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from getpass import getpass
@@ -11,9 +12,10 @@ import psycopg
 from dominio.empleado import Empleado
 from dominio.proyecto import Proyecto
 from dominio.excepciones import EcoTechError
+from menu_clima import consultar_clima_menu
 from repositorio.conexion import obtener_conexion
 from repositorio.sistema_repo import SistemaRepositorio
-from servicios import GestionEcoTech, autenticar, necesita_administrador, crear_administrador_inicial
+from servicios import GestionEcoTech, autenticar, cerrar_sesion, necesita_administrador, crear_administrador_inicial
 
 
 def leer_texto(mensaje, predeterminado=None):
@@ -400,18 +402,30 @@ def iniciar_sesion():
 
 def menu_principal(gestion):
     while True:
-        cuenta = gestion.cuenta_actual()
-        administrador = cuenta.get_rol_acceso() == "administrador"
-        mostrar_ficha("EcoTech", [("Usuario", cuenta.usuario), ("Rol", cuenta.get_rol_acceso())])
+        try:
+            perfil, sin_conexion = gestion.perfil_menu()
+        except (EcoTechError, psycopg.Error, ValueError):
+            print("No se pudo validar la sesión. Vuelve a iniciar sesión.")
+            return
+        administrador = perfil["rol"] == "administrador"
+        mostrar_ficha("EcoTech", [("Usuario", perfil["usuario"]), ("Rol", perfil["rol"])])
         if administrador:
             opciones = [("1", "Departamentos"), ("2", "Empleados"), ("3", "Proyectos"),
                         ("4", "Horas"), ("5", "Informes"), ("6", "Contraseña"), ("0", "Salir")]
         else:
             opciones = [("3", "Mis proyectos"), ("4", "Mis horas"), ("6", "Contraseña"), ("0", "Salir")]
+        if sin_conexion:
+            print("Supabase no está disponible. La sesión actual permite consultar clima y su respaldo local.")
+            opciones = [("7", "Consultar clima"), ("0", "Salir")]
+        else:
+            opciones.insert(-1, ("7", "Consultar clima"))
         mostrar_menu("MENÚ PRINCIPAL", opciones)
         opcion = input("Opción: ").strip()
         if opcion == "0":
             return
+        if sin_conexion and opcion != "7":
+            print("Esta operación requiere conexión con Supabase.")
+            continue
         def accion():
             if opcion == "1" and administrador:
                 menu_departamentos(gestion)
@@ -428,6 +442,8 @@ def menu_principal(gestion):
                 nueva = leer_clave()
                 gestion.cambiar_contrasena(actual, nueva)
                 print("Contraseña actualizada.")
+            elif opcion == "7":
+                consultar_clima_menu(gestion)
             else:
                 print("Opción inválida o no autorizada.")
         intentar(accion)
@@ -439,6 +455,7 @@ def main():
     grupo.add_argument("--inicializar", action="store_true", help="Crear el esquema en una base nueva")
     grupo.add_argument("--verificar", action="store_true", help="Pruebas locales y de BD con rollback")
     grupo.add_argument("--verificar-local", action="store_true", help="Pruebas sin conexión a BD")
+    grupo.add_argument("--inicializar-clima", action="store_true", help="Preparar tabla de clima tras iniciar sesión como administrador")
     args = parser.parse_args()
     try:
         if args.verificar or args.verificar_local:
@@ -456,7 +473,15 @@ def main():
         sesion = iniciar_sesion()
         if sesion is None:
             return 0
-        menu_principal(GestionEcoTech(sesion))
+        try:
+            gestion = GestionEcoTech(sesion)
+            if args.inicializar_clima:
+                gestion.inicializar_clima()
+                print("Tabla de clima preparada. Los datos existentes se conservaron.")
+            else:
+                menu_principal(gestion)
+        finally:
+            cerrar_sesion(sesion)
         return 0
     except (EOFError, KeyboardInterrupt):
         print("\nSesión finalizada.")
@@ -470,4 +495,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     raise SystemExit(main())

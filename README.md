@@ -9,10 +9,11 @@ en Supabase. `.env` conserva sus valores locales y no se sube al repositorio.
 Para crear únicamente la tabla adicional de clima en una base de E2 existente:
 
 ~~~powershell
-python probar_clima.py --inicializar-clima
+python main.py --inicializar-clima
 ~~~
 
-Esta operación ejecuta `datos/clima.sql` y puede repetirse sin borrar datos.
+Esta operación requiere iniciar sesión como administrador, ejecuta `datos/clima.sql`
+y puede repetirse sin borrar datos. Si la tabla ya se creó, no hace falta repetirla.
 No es necesario volver a ejecutar el esquema completo de E2. La consola utiliza
 la conexión PostgreSQL propietaria existente; la nueva tabla tiene RLS habilitado
 y no se configura acceso público mediante la Data API.
@@ -20,8 +21,14 @@ y no se configura acceso público mediante la Data API.
 Para consultar y guardar el clima:
 
 ~~~powershell
-python probar_clima.py
+python main.py
 ~~~
+
+Después de iniciar sesión, elegir `7 - Consultar clima`. Administradores y empleados
+pueden usar esta opción. El antiguo script `probar_clima.py` fue retirado y su flujo
+está ahora en `menu_clima.py`, que exige una sesión autenticada antes de acceder
+a la API o al respaldo. El servicio comprueba que la sesión fue emitida por el login;
+construir un objeto `Sesion` manualmente no habilita estas consultas.
 
 El repositorio `repositorio/clima_repo.py` utiliza parámetros separados del SQL.
 La restricción única por latitud, longitud y fecha meteorológica permite actualizar
@@ -36,8 +43,43 @@ informa que no se confirmó, conservando la visualización de los datos recibido
 La conexión tiene un timeout de 10 segundos; las consultas de clima tienen un
 límite de ejecución de 10 segundos y de espera de bloqueos de 5 segundos.
 
-Este script es una prueba de desarrollo. Todavía quedan pendientes el respaldo
-local sin conexión y la integración de esta funcionalidad al menú autenticado.
+El menú verifica la cuenta con Supabase. Ante una pérdida de conexión, una sesión
+ya autenticada conserva temporalmente su último perfil confirmado en memoria y
+solo ofrece clima y salida; las operaciones administrativas no se habilitan por
+ese perfil local. Al salir o interrumpir la sesión se elimina su autorización para
+el clima. No se guardan contraseñas ni sesiones en SQLite. Iniciar una nueva sesión
+requiere conexión; una revocación remota solo puede comprobarse al recuperar acceso
+a Supabase. No se implementó inicio de sesión sin conexión.
+
+### Respaldo local y prueba sin conexión
+
+El repositorio `repositorio/clima_local_repo.py` crea automáticamente el archivo
+`datos/clima_local.sqlite3`. SQLite viene incluido con Python; no requiere un
+servidor adicional. La base local y sus archivos auxiliares quedan fuera de Git.
+
+Cada consulta meteorológica válida se guarda primero localmente y después se
+intenta guardar en Supabase. El respaldo conserva el último clima por coordenadas,
+su lugar y su fecha original de obtención; no mantiene todo el historial remoto.
+Las sentencias SQLite utilizan parámetros `?`, separados del texto SQL.
+
+Si falla la búsqueda de ciudades, se buscan coincidencias entre los lugares con
+clima guardado localmente, sin distinguir mayúsculas ni tildes. Si falla la consulta
+del clima o devuelve datos inválidos, se muestra el respaldo del lugar seleccionado
+con `obtenido_en` y su antigüedad. No se cambia esa fecha al leer el respaldo ni se
+envían esos datos antiguos de nuevo a Supabase. Sin datos locales se muestra un
+mensaje claro; una primera consulta sin conexión no puede inventar un respaldo.
+
+Para probarlo, ejecutar `python main.py` con internet, iniciar sesión y elegir la
+opción 7 para consultar un lugar.
+Comprobar el mensaje `Copia local guardada.`. Mantener la sesión abierta, desconectar
+la red y elegir nuevamente la opción 7 para buscar el mismo lugar. Tras los intentos de conexión deben
+aparecer los datos locales y el aviso `PLAN B`. Reconectar la red al finalizar.
+También se puede probar cortando la red después de seleccionar una ciudad.
+
+Si SQLite no está disponible, la consulta en línea puede continuar con un aviso.
+Si falla solo Supabase, los datos de la API siguen visibles y la copia local se
+conserva si se pudo escribir. No se implementó todavía sincronización automática
+de guardados remotos pendientes ni autenticación sin conexión.
 
 Para comprobar duplicados después de consultar dos veces el mismo lugar, revisar
 en el SQL Editor de Supabase:

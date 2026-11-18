@@ -68,7 +68,7 @@ class ClimaRepositorio:
                 )
         except psycopg.errors.UndefinedTable as error:
             raise ErrorPersistencia(
-                "Falta la tabla de clima. Ejecuta python probar_clima.py --inicializar-clima"
+                "Falta la tabla de clima. Ejecuta python main.py --inicializar-clima como administrador"
             ) from error
         except psycopg.Error as error:
             raise ErrorPersistencia("No se pudo guardar el clima en la base de datos") from error
