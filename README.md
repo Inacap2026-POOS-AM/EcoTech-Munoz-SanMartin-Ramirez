@@ -1,384 +1,164 @@
-# EcoTech — Evaluación Sumativa 2
+# EcoTech — Evaluación 3
 
-## Avance individual E3 en la rama e3/munoz
+Extensión individual del sistema de empleados y proyectos de la E2. En esta entrega agregué consultas de clima, dólar observado, conversión de CLP a USD y respaldos locales para continuar si se pierde la conexión.
 
-### Dólar observado y conversión de pagos
+Mi rama es `e3/munoz`. La rama `main` se mantiene como respaldo de la E2.
 
-Después de iniciar sesión, la opción `8 - Dólar y conversión CLP a USD` consulta
-`https://mindicador.cl/api/dolar`. Se valida que el código sea `dolar`, la unidad
-sea `Pesos` y la serie contenga valores y fechas válidos. Se selecciona la fecha
-más reciente de la serie; no se asume que el primer elemento sea el último.
-La fecha del indicador siempre se muestra, porque puede ser anterior al día de
-consulta. Fuente y documentación: https://mindicador.cl/.
+## Instalación
 
-Los decimales del JSON se interpretan directamente como `Decimal`. Para convertir
-un pago de CLP a USD se divide el importe por los CLP de un dólar. Se aceptan
-importes positivos, de hasta dos decimales y máximo 9999999999.99 CLP, escritos
-con punto decimal y sin separadores de miles. El resultado se redondea a centavos
-con `ROUND_HALF_UP`. Es una conversión referencial: no incluye comisiones, no
-transfiere dinero y no modifica los salarios registrados. Ambos roles pueden
-convertir un importe que ingresen; esta opción no revela salarios de empleados.
+Necesito Python 3.11 o posterior, Git y una base PostgreSQL en Supabase. Las pruebas se realizaron con Python 3.14.
 
-`datos/indicadores.sql` define la tabla `ecotech.indicador_dolar`, con una fila por
-fecha y consultas parametrizadas en `repositorio/indicador_repo.py`. Para preparar
-la tabla en otra instalación, ejecutar `python main.py --inicializar-indicadores`
-e iniciar sesión como administrador. La operación no borra datos existentes.
-
-El respaldo `datos/indicadores_local.sqlite3` se crea automáticamente y queda
-fuera de Git. Guarda valores decimales como texto para conservar su precisión.
-Ante un fallo de API o respuesta inválida, se utiliza el indicador local más
-reciente y se muestra `PLAN B`, su fecha y la antigüedad de `obtenido_en`.
-Sin un indicador previo se informa que no existe respaldo; no se inventa un tipo
-de cambio. El indicador recuperado no se vuelve a enviar a Supabase.
-
-La opción 8 permanece disponible durante una sesión ya autenticada si falla
-Supabase, junto a la opción 7 y la salida. La autorización común ahora se llama
-`exigir_sesion()`, porque protege tanto clima como indicadores.
-
-Prueba manual: iniciar sesión con internet, elegir 8 y convertir un importe.
-Después, mantener la sesión abierta, desconectar la red y repetir la opción 8.
-Debe usar el respaldo e indicar su antigüedad. Las pruebas automáticas locales de
-indicadores están en `verificaciones_indicadores.py` y se incluyen en
-`python main.py --verificar-local`.
-
-### Contraseñas con Argon2id
-
-Instalar las dependencias actualizadas con `python -m pip install -r requirements.txt`.
-Las cuentas nuevas y los cambios de contraseña usan `argon2-cffi`, con Argon2id y
-sal aleatoria generada automáticamente. Se almacena el hash, nunca la contraseña.
-
-La versión actual utiliza únicamente Argon2: no verifica hashes PBKDF2 anteriores
-ni depende de Werkzeug. Tras el reinicio de datos solicitado, ejecutar `python main.py`
-y completar el registro del primer administrador. Las cuentas nuevas conservan su
-contraseña mediante un hash Argon2id, sin guardar el texto original.
-
-Las comprobaciones de salt, verificación y rechazo de hashes inválidos se ejecutan con
-`python main.py --verificar-local`. La auditoría histórica de E2 que figura más
-abajo describe las decisiones anteriores a este cambio.
-
-La consulta de clima permite buscar y seleccionar un lugar por nombre. Requiere
-la configuración PostgreSQL de `.env` descrita más abajo para guardar resultados
-en Supabase. `.env` conserva sus valores locales y no se sube al repositorio.
-
-Para crear únicamente la tabla adicional de clima en una base de E2 existente:
-
-~~~powershell
-python main.py --inicializar-clima
-~~~
-
-Esta operación requiere iniciar sesión como administrador, ejecuta `datos/clima.sql`
-y puede repetirse sin borrar datos. Si la tabla ya se creó, no hace falta repetirla.
-No es necesario volver a ejecutar el esquema completo de E2. La consola utiliza
-la conexión PostgreSQL propietaria existente; la nueva tabla tiene RLS habilitado
-y no se configura acceso público mediante la Data API.
-
-Para consultar y guardar el clima:
-
-~~~powershell
-python main.py
-~~~
-
-Después de iniciar sesión, elegir `7 - Consultar clima`. Administradores y empleados
-pueden usar esta opción. El antiguo script `probar_clima.py` fue retirado y su flujo
-está ahora en `menu_clima.py`, que exige una sesión autenticada antes de acceder
-a la API o al respaldo. El servicio comprueba que la sesión fue emitida por el login;
-construir un objeto `Sesion` manualmente no habilita estas consultas.
-
-El repositorio `repositorio/clima_repo.py` utiliza parámetros separados del SQL.
-La restricción única por latitud, longitud y fecha meteorológica permite actualizar
-una consulta repetida sin duplicarla. Las coordenadas se almacenan con seis
-decimales. Una fecha meteorológica distinta conserva un registro nuevo.
-Una respuesta obtenida antes no reemplaza otra obtenida después para la misma clave.
-
-`fecha_clima` es la hora meteorológica del servicio en `America/Santiago`;
-`obtenido_en` registra cuándo recibimos la respuesta, con zona horaria UTC.
-El guardado se confirma al salir correctamente de la transacción. Si falla, se
-informa que no se confirmó, conservando la visualización de los datos recibidos.
-La conexión tiene un timeout de 10 segundos; las consultas de clima tienen un
-límite de ejecución de 10 segundos y de espera de bloqueos de 5 segundos.
-
-El menú verifica la cuenta con Supabase. Ante una pérdida de conexión, una sesión
-ya autenticada conserva temporalmente su último perfil confirmado en memoria y
-solo ofrece clima, indicadores y salida; las operaciones administrativas no se habilitan por
-ese perfil local. Al salir o interrumpir la sesión se elimina su autorización para
-el clima. No se guardan contraseñas ni sesiones en SQLite. Iniciar una nueva sesión
-requiere conexión; una revocación remota solo puede comprobarse al recuperar acceso
-a Supabase. No se implementó inicio de sesión sin conexión.
-
-### Respaldo local y prueba sin conexión
-
-El repositorio `repositorio/clima_local_repo.py` crea automáticamente el archivo
-`datos/clima_local.sqlite3`. SQLite viene incluido con Python; no requiere un
-servidor adicional. La base local y sus archivos auxiliares quedan fuera de Git.
-
-Cada consulta meteorológica válida se guarda primero localmente y después se
-intenta guardar en Supabase. El respaldo conserva el último clima por coordenadas,
-su lugar y su fecha original de obtención; no mantiene todo el historial remoto.
-Las sentencias SQLite utilizan parámetros `?`, separados del texto SQL.
-
-Si falla la búsqueda de ciudades, se buscan coincidencias entre los lugares con
-clima guardado localmente, sin distinguir mayúsculas ni tildes. Si falla la consulta
-del clima o devuelve datos inválidos, se muestra el respaldo del lugar seleccionado
-con `obtenido_en` y su antigüedad. No se cambia esa fecha al leer el respaldo ni se
-envían esos datos antiguos de nuevo a Supabase. Sin datos locales se muestra un
-mensaje claro; una primera consulta sin conexión no puede inventar un respaldo.
-
-Para probarlo, ejecutar `python main.py` con internet, iniciar sesión y elegir la
-opción 7 para consultar un lugar.
-Comprobar el mensaje `Copia local guardada.`. Mantener la sesión abierta, desconectar
-la red y elegir nuevamente la opción 7 para buscar el mismo lugar. Tras los intentos de conexión deben
-aparecer los datos locales y el aviso `PLAN B`. Reconectar la red al finalizar.
-También se puede probar cortando la red después de seleccionar una ciudad.
-
-Si SQLite no está disponible, la consulta en línea puede continuar con un aviso.
-Si falla solo Supabase, los datos de la API siguen visibles y la copia local se
-conserva si se pudo escribir. No se implementó todavía sincronización automática
-de guardados remotos pendientes ni autenticación sin conexión.
-
-Para comprobar duplicados después de consultar dos veces el mismo lugar, revisar
-en el SQL Editor de Supabase:
-
-~~~sql
-SELECT latitud, longitud, fecha_clima, COUNT(*) AS cantidad
-FROM ecotech.clima
-GROUP BY latitud, longitud, fecha_clima
-HAVING COUNT(*) > 1;
-~~~
-
-La consulta no debe devolver filas. Si entre las dos ejecuciones cambió la fecha
-meteorológica enviada por la API, es correcto conservar dos registros distintos.
-
-Aplicación de consola en Python basada en el UML de ES1. Administra empleados,
-departamentos, proyectos, cuentas y horas con persistencia PostgreSQL en Supabase.
-Los informes PDF y Excel conservan la jerarquía aportada por el compañero del equipo.
-
-## Ejecutar en Windows
-
-Requisitos: Python 3.11 o posterior (verificado con 3.14), Git y un proyecto Supabase.
 Desde la carpeta EcoTech:
 
-~~~powershell
+```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
-~~~
+```
 
-Si .venv o .env ya existen, conservarlos; no volver a copiarlos sobre la configuración local.
-Completar .env con los valores EXACTOS de Connect > Direct > Session pooler:
+Si `.venv` o `.env` ya existen, no los reemplazo. En `.env` completo los datos de conexión PostgreSQL de mi proyecto Supabase:
 
-~~~dotenv
+```dotenv
 DB_HOST=
 DB_PORT=5432
 DB_NAME=postgres
 DB_USER=
 DB_PASSWORD=
 DB_SSLMODE=require
-~~~
+```
 
-La contraseña es la de PostgreSQL, no una API key ni la clave de inicio de sesión de
-Supabase. Puede escribirse entre comillas en .env. No se imprime ni se versiona.
-SSL require exige cifrado; no equivale a validar completamente el certificado del
-servidor. Si se configura verify-full, deben prepararse los certificados correspondientes.
+Uso los datos del método de conexión que muestra Supabase, incluido el puerto correspondiente. `DB_PASSWORD` es la contraseña de PostgreSQL, no una API key. El programa avisa si falta una variable. `.env`, las bases SQLite y los reportes están fuera de Git; solo se entrega `.env.example` sin credenciales.
 
-### Base nueva
+## Preparar la base
 
-Ejecutar una sola vez datos/schema.sql en el SQL Editor, o desde Python:
+Solo para una base nueva, creo las tablas de empleados, cuentas y proyectos:
 
-~~~powershell
+```powershell
 python main.py --inicializar
-~~~
+```
 
-La opción comprueba si las tablas ya existen y no borra datos. Si encuentra una
-instalación parcial, informa el problema; no elimina tablas para repararla.
-El esquema es ecotech. Las seis tablas tienen RLS habilitado. La consola se conecta
-mediante el usuario PostgreSQL del proyecto (normalmente postgres a través del pooler),
-que puede operar como propietario; no utiliza anon/authenticated ni Data API.
-No se deben exponer estas credenciales en una aplicación web o cliente público.
-El control de roles de la consola no se convierte automáticamente en políticas RLS.
+Si ya tengo la E2 funcionando, no necesito repetirlo. Inicio el programa y, si no existe un administrador, completo su registro inicial:
 
-### Iniciar
-
-~~~powershell
+```powershell
 python main.py
-~~~
+```
 
-Si no hay administrador, la aplicación pide los datos para registrar el primero.
-Se eligen usuario y contraseña: no hay claves predeterminadas ni credenciales de
-demostración. Si ya existe un administrador, se solicita iniciar sesión.
-Las cuentas de empleado creadas durante las pruebas anteriores siguen existiendo.
-No se promovieron automáticamente a administrador.
+Después preparo las tablas de la E3 iniciando sesión como administrador en cada comando:
 
-El programa ya no ejecuta los antiguos bloques de prueba al iniciarse ni crea filas
-de demostración en cada ejecución. El main.py anterior se conserva en el historial
-Git y la rama respaldo/avance-local-20261023.
+```powershell
+python main.py --inicializar-clima
+python main.py --inicializar-indicadores
+```
 
-## Funcionalidades por rol
+Estos comandos no borran datos. Los SQL están en `datos/schema.sql`, `datos/clima.sql` y `datos/indicadores.sql`. Las tablas tienen RLS activo. La consola usa la conexión PostgreSQL propietaria; los roles de la aplicación se comprueban en Python y no son políticas RLS para un cliente público.
 
-| Función | Administrador | Empleado |
-|---|---|---|
-| CRUD de departamentos y empleados | Sí | No |
-| Designar o quitar gerente | Sí | No |
-| CRUD de proyectos y asignaciones | Sí | Solo consulta de sus proyectos |
-| Registrar, consultar, corregir y eliminar horas | Todos los empleados | Solo sus propias horas |
-| Informes con salarios | Sí | No |
-| Cambiar su contraseña | Sí | Sí |
+## Uso
 
-El servicio vuelve a consultar la cuenta antes de las operaciones; ocultar opciones
-en el menú no es el único control. No se puede borrar al empleado de la propia sesión.
-El acceso incorrecto muestra un mensaje y devuelve al menú.
-Los tres intentos de login limitan una ejecución de consola; no son un bloqueo
-persistente contra intentos desde otro proceso.
+```powershell
+python main.py
+```
 
-## Estructura y responsabilidades
+Ingreso el usuario de la cuenta y su contraseña, no el nombre del empleado. Las contraseñas se guardan con Argon2id y sal aleatoria. La versión actual no admite los hashes PBKDF2 de E2.
 
-~~~text
-EcoTech/
-  dominio/
-    persona.py, empleado.py, departamento.py, proyecto.py
-    cuenta_usuario.py, registro_tiempo.py
-    informe.py, informe_pdf.py, informe_excel.py
-    excepciones.py, validaciones.py, __init__.py
-  repositorio/
-    conexion.py, departamento_repo.py, empleado_repo.py
-    cuenta_usuario_repo.py, proyecto_repo.py, registro_tiempo_repo.py
-    sistema_repo.py, __init__.py
-  datos/schema.sql
-  servicios.py
-  main.py
-  verificaciones.py
-  .env.example
-  .gitignore
-  requirements.txt
-  README.md
-~~~
+| Opción | Función |
+|---|---|
+| 1 y 2 | Departamentos y empleados, solo administrador |
+| 3 | Proyectos; el empleado consulta los que tiene asignados |
+| 4 | Horas; el empleado administra solo sus registros |
+| 5 | Informes PDF y Excel, solo administrador |
+| 6 | Cambiar la contraseña de la cuenta actual |
+| 7 | Buscar un lugar y consultar su clima |
+| 8 | Consultar el dólar y convertir un importe de CLP a USD |
+| 0 | Salir y cerrar la sesión |
 
-- Dominio: clases y reglas de negocio, sin SQL. Las nueve clases del UML están presentes.
-- Repositorios: SQL parametrizado, acceso a datos y mapeo de filas a objetos.
-- sistema_repo.py: inicialización y reconstrucción de relaciones con objetos compartidos.
-- servicios.py: autorización, operaciones atómicas y coordinación de repositorios.
-- main.py: entrada de datos, mensajes y menús, sin SQL.
-- verificaciones.py: evidencias reproducibles de las comprobaciones exigidas.
-- reportes/: resultados generados; se crea cuando hace falta y queda fuera de Git.
+### Clima
 
-El ID 0 se utiliza solamente en objetos nuevos aún no persistidos. PostgreSQL genera
-el ID real y los repositorios devuelven un objeto reconstruido con ese identificador;
-no se introduce un setter público de ID. Fechas como objetos date. Salarios y horas
-con Decimal para evitar cálculos monetarios aproximados con float. NUMERIC mantiene
-la representación decimal en la base.
+Escribo el nombre del lugar y selecciono una coincidencia con ciudad, región y país. El programa obtiene sus coordenadas y muestra temperatura, humedad, estado del tiempo y fecha meteorológica. Las horas se expresan siempre en `America/Santiago`, aunque consulte otro país.
 
-## Flujo de horas y relaciones
+Fuentes: [búsqueda de lugares](https://open-meteo.com/en/docs/geocoding-api) y [clima de Open-Meteo](https://open-meteo.com/en/docs).
 
-En memoria, Proyecto.registrar_tiempo coordina validar, crear RegistroTiempo y
-asociarlo con el empleado y el proyecto. Es un método auxiliar de implementación.
+### Dólar
 
-En el flujo persistido, el menú solicita fecha, horas y tarea; el servicio determina
-qué empleado puede usar la sesión y el repositorio crea el registro con IDs reales.
-La llave foránea compuesta exige que exista la asignación empleado-proyecto.
-No se registran horas automáticamente al asignar un empleado.
+La opción 8 obtiene el dólar observado desde [mindicador.cl](https://mindicador.cl/api/dolar). Muestra el valor en CLP por USD y la fecha más reciente de la serie. Esa fecha puede ser anterior a hoy.
 
-Al recuperar datos para informes se reconstruye un grafo coherente:
-departamentos, empleados, cuentas, proyectos y registros comparten las mismas
-instancias relacionadas. Los proyectos suman todos sus registros mediante
-calcular_horas_totales(). Leer un registro aislado no carga todo el historial del
-empleado/proyecto; los informes usan la carga completa, no esa lectura parcial.
+Ingreso un importe como `900000`, sin símbolos ni separadores de miles. Se permiten hasta dos decimales, con punto. El cálculo es `importe CLP / valor del dólar`; usa `Decimal` y redondea a dos decimales con `ROUND_HALF_UP`.
 
-Los aumentos inválidos devuelven False, según el UML. Las validaciones rechazan
-números no finitos, booleanos usados como cantidades y cantidades fuera de rango.
-Las fechas imposibles y entradas incorrectas se informan sin cerrar el menú.
+Es una conversión referencial: no incluye comisiones, no modifica salarios ni realiza transferencias. Ambos roles pueden ingresar un importe; esta opción no muestra sueldos de otros empleados.
 
-### Reglas de eliminación
+## Errores y respaldo local
 
-- Departamento con empleados: bloqueado; reasignar antes.
-- Empleado: elimina cuenta, asignaciones y horas por composición; si era gerente,
-  su departamento queda sin gerente.
-- Proyecto con registros: bloqueado para conservar su historia.
-- Quitar una asignación con registros: bloqueado; resolver primero esos registros.
-- Trasladar a un gerente: quitar primero su designación, luego cambiar departamento.
+Todas las peticiones pasan por `api_cliente.py`, con timeout de conexión de 3 segundos y de lectura de 10 segundos. Hay como máximo tres intentos en total:
 
-## Informes
+- Los errores 4xx no se reintentan, salvo 429. Estas APIs no usan tokens que deban renovarse ante un 401.
+- En 429 se respeta `Retry-After`, en segundos o fecha HTTP. Si falta o es inválido, se usa la espera base.
+- Los errores 5xx, timeout y conexión se reintentan con esperas base de 1 y 2 segundos. Si un 5xx indica un `Retry-After` válido, también se respeta.
+- No se desactiva la verificación TLS. Los errores SSL y el JSON inválido se comunican sin reintentos automáticos.
 
-El administrador puede elegir PDF, Excel o ambos. Se exportan empleados, proyectos
-con horas totales y registros con empleado y proyecto. No se exportan hashes ni claves.
-La lista mixta de InformePDF e InformeExcel usa el mismo generar() sin preguntar
-por el tipo de objeto. Se guarda en reportes/ con fecha, hora y sufijo único.
-Los textos del Excel se escriben como texto, no como fórmulas; los del PDF se
-escapan antes de usarse en Paragraph.
-Los informes contienen salarios y el servicio limita su exportación al administrador.
+Los intentos y esperas aparecen en la terminal. Los deserializadores validan la estructura y crean objetos `Clima` o `IndicadorDolar` antes de guardar.
 
-## Verificaciones de ES2
+Primero se guarda una copia en SQLite y después se intenta Supabase. El respaldo se crea automáticamente en `datos/clima_local.sqlite3` y `datos/indicadores_local.sqlite3`; no requiere instalar un servidor. Guarda el último clima por coordenadas y los indicadores por fecha.
 
-Sin acceso a la base:
+Si falla internet, se buscan lugares previamente guardados y se recupera el dato local. El aviso `PLAN B` muestra la antigüedad de `obtenido_en`. Esa fecha no cambia al leer el respaldo. Si nunca hubo una consulta exitosa, se informa que no hay datos locales. Los datos recuperados no se vuelven a enviar como nuevos a Supabase.
 
-~~~powershell
+Necesito internet para iniciar sesión. Si la conexión se corta después, la sesión permanece en memoria y el menú ofrece 7, 8 y 0. Al recuperar Supabase se comprueba otra vez la cuenta. Una revocación remota no puede detectarse mientras está desconectado. No hay login sin conexión ni sincronización automática de escrituras remotas pendientes.
+
+## Persistencia y seguridad
+
+Las consultas usan parámetros separados del SQL: `%s` con Psycopg y `?` con SQLite. Supabase conserva una fila por coordenadas y fecha meteorológica para clima, y una por fecha para dólar. Una consulta repetida actualiza la fila; una observación con otra fecha es un registro distinto.
+
+`fecha_clima` y la fecha del dólar describen el dato externo. `obtenido_en` registra cuándo lo recibió el programa, en UTC. Si falla la confirmación remota, se informa que el guardado no se confirmó; no se asegura que haya fallado antes de llegar al servidor.
+
+Los repositorios remotos dejan el commit o rollback al bloque que abrió la conexión. Las operaciones E3 tienen límites de ejecución y bloqueo en PostgreSQL. Esos límites no garantizan una detección inmediata de todo corte de red. `sslmode=require` cifra la conexión PostgreSQL; no equivale a verificar completamente el certificado con `verify-full`.
+
+## Pruebas
+
+Sin Supabase:
+
+```powershell
 python main.py --verificar-local
-~~~
+```
 
 Con Supabase:
 
-~~~powershell
+```powershell
 python main.py --verificar
-~~~
+```
 
-La suite incluye siete casos locales y dos casos de integración, con múltiples
-comprobaciones por caso:
+El 18 de noviembre pasaron 15 pruebas locales y 17 al incluir integración. Cubren dominio, Argon2, permisos, informes, conversión, validación, reintentos, respaldo del dólar y rollback. La integración utiliza datos temporales y los revierte o limpia; los números de secuencia pueden avanzar aunque una transacción se revierta.
 
-- Herencia, encapsulamiento, validaciones y rechazo de NaN/infinito/bool.
-- Cuenta con hash y sal aleatoria; contraseña correcta e incorrecta.
-- Relaciones del dominio, copias de colecciones y coordinación del registro.
-- Generación real PDF/XLSX, datos vacíos y textos parecidos a fórmulas.
-- CRUD, asignaciones, gerente y restauración de objetos relacionados.
-- Búsqueda con el payload ' OR '1'='1 como parámetro.
-- Fallo de la segunda escritura (usuario duplicado) y rollback del empleado nuevo.
-- Impedir registrar horas sin asignación y modificar horas de otro empleado.
-- Menú autenticado de empleado y rechazo de opciones administrativas.
-- Persistencia comprobada desde una conexión nueva.
+También se verificaron ambos guardados E3 sin duplicados, el formato Argon2id en la base y un endpoint real inexistente de Open-Meteo: respondió 404 y no se reintentó. En mi equipo comprobé las opciones 7 y 8, el corte de Ethernet durante la sesión, el Plan B y la recuperación del menú al reconectar.
 
-La integración usa rollback para revertir sus datos y una prueba separada confirma
-la reapertura con limpieza posterior de su única fila temporal. Las secuencias de
-identidad pueden avanzar incluso después de rollback: los saltos de ID son normales.
-El programa no borra datos anteriores del usuario.
-La conexión debe tener los permisos del propietario usados para esta consola de curso.
+Para repetir la prueba manual, consulto y guardo primero con internet, dejo la sesión abierta, desconecto la red y vuelvo a elegir 7 u 8. Debe mostrar datos anteriores y su antigüedad. Reconecto al terminar.
 
-Las evidencias para el informe se obtienen ejecutando las verificaciones y capturando
-su resultado, las consultas parametrizadas y el código de transacción. Las pruebas
-automatizadas no sustituyen comprender y explicar el código.
+Para revisar duplicados en el SQL Editor de Supabase:
 
-## Transacciones
+```sql
+SELECT latitud, longitud, fecha_clima, COUNT(*)
+FROM ecotech.clima
+GROUP BY latitud, longitud, fecha_clima
+HAVING COUNT(*) > 1;
 
-Los repositorios no confirman por su cuenta. El servicio usa una conexión compartida
-dentro de with obtener_conexion(): si termina correctamente, Psycopg confirma; si
-sale una excepción, revierte y cierra. Crear empleado y cuenta sucede dentro de ese
-mismo bloque. El administrador inicial también se registra de forma atómica y usa
-un bloqueo transaccional para evitar dos configuraciones iniciales simultáneas.
-Las comprobaciones de la BD siguen aplicándose aunque se intente omitir el menú.
+SELECT fecha, COUNT(*)
+FROM ecotech.indicador_dolar
+GROUP BY fecha
+HAVING COUNT(*) > 1;
+```
 
-## Auditoría real del apoyo de IA
+Ninguna consulta debe devolver filas. Para revisar usuarios, basta comprobar en Supabase que `contrasena_hash` empiece por `$argon2id$`; no comparto la contraseña ni el hash completo.
 
-Herramienta usada: ChatGPT/Codex en este chat. Las versiones no registradas no se
-inventan. La siguiente matriz describe decisiones reales sobre el código de este
-proyecto; el equipo debe revisarla, agregar sus observaciones y registrar sus aportes.
+## Archivos principales
 
-| Fragmento / propuesta | Aspecto | Decisión | Justificación y evidencia |
-|---|---|---|---|
-| SQL con marcadores %s y valores separados | Seguridad | Acepto | Se conserva; la prueba con ' OR '1'='1 busca datos literales sin devolver filas ajenas. |
-| Salario/horas iniciales sin validación completa y cálculo con float | Integridad | Modifico | Decimal, validación de finitud, rango y decimales; se rechazan NaN, infinito y bool. |
-| Mostrar autorizar() como True/False en pruebas sin bloquear operaciones | Seguridad | Modifico | Servicios comprueban rol y propiedad antes de cada operación; una cuenta de empleado no puede modificar registros ajenos. |
-| Crear registro y asociarlo por llamadas separadas en main | Consistencia | Modifico | Coordinación del dominio, transacción en persistencia y llave compuesta de asignación; prueba real de rollback. |
-| Hash PBKDF2 con Werkzeug y sal automática | Contraseñas | Acepto | No se almacena texto original; la cuenta recuperada verifica la contraseña y rechaza otra. |
-| Informes del compañero con listas parciales | Datos / POO | Modifico | Se preserva la jerarquía y el formato; se cargan relaciones completas y se agrega el proyecto del registro. |
+- `main.py`: login, menú y comandos de inicialización y pruebas.
+- `servicios.py`: sesiones, roles y acceso a servicios externos.
+- `api_cliente.py`: peticiones HTTP, errores y reintentos compartidos.
+- `deserializador_clima.py` y `deserializador_dolar.py`: validación de respuestas.
+- `dominio/`: objetos y reglas del sistema, incluidos clima, dólar y cuentas.
+- `repositorio/`: acceso a PostgreSQL y respaldos SQLite.
+- `menu_clima.py` y `menu_indicadores.py`: presentación de las consultas.
+- `verificaciones.py` y `verificaciones_indicadores.py`: pruebas automáticas.
+- `bitacora_ia.md`: registro de apoyo de IA y decisiones técnicas.
 
-No se afirma haber escrito sin asistencia los fragmentos apoyados por IA.
-La autoría humana y porcentajes deben declararse con sus nombres reales en el informe,
-sin atribuir todo el código generado a un integrante.
+## Entrega
 
-
-## Documentación
-
-- Python: https://docs.python.org/3/
-- Psycopg y parámetros: https://www.psycopg.org/psycopg3/docs/basic/params.html
-- Transacciones: https://www.psycopg.org/psycopg3/docs/basic/transactions.html
-- Supabase PostgreSQL: https://supabase.com/docs/guides/database/connecting-to-postgres
-- Werkzeug: https://werkzeug.palletsprojects.com/en/stable/utils/
-- ReportLab: https://docs.reportlab.com/reportlab/userguide/ch5_platypus/
-- openpyxl: https://openpyxl.readthedocs.io/en/stable/tutorial.html
+Entrego el enlace a [mi rama e3/munoz](https://github.com/Inacap2026-POOS-AM/EcoTech-Munoz-SanMartin-Ramirez/tree/e3/munoz). No fusiono a `main` mientras se realizan las evaluaciones individuales.
