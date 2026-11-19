@@ -1,0 +1,7 @@
+CREATE SCHEMA IF NOT EXISTS ecotech;
+CREATE TABLE IF NOT EXISTS ecotech.indicador_dolar (
+    fecha DATE PRIMARY KEY,
+    valor NUMERIC NOT NULL CHECK (valor BETWEEN 0.0001 AND 1000000),
+    obtenido_en TIMESTAMPTZ NOT NULL
+);
+ALTER TABLE ecotech.indicador_dolar ENABLE ROW LEVEL SECURITY;

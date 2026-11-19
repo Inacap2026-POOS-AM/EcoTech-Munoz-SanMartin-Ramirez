@@ -1,7 +1,8 @@
 """Operaciones de aplicación. El SQL permanece en repositorio/."""
 from dataclasses import dataclass
 import psycopg
-from api_cliente import buscar_lugares, consultar_clima
+from api_cliente import buscar_lugares, consultar_clima, consultar_dolar
+from repositorio.indicador_repo import IndicadorRepositorio
 from dominio.cuenta_usuario import CuentaUsuario
 from dominio.empleado import Empleado
 from dominio.excepciones import AutorizacionError, EntidadNoEncontradaError, ConexionBaseDatosError, ErrorPersistencia
@@ -21,9 +22,9 @@ class Sesion:
     empleado_id: int
 
 
-# Solo las sesiones emitidas tras verificar la contraseña habilitan el clima.
+# Solo las sesiones emitidas tras verificar la contraseña habilitan servicios externos.
 # No se guardan credenciales ni sesiones en SQLite.
-_sesiones_clima = {}
+_sesiones_activas = {}
 
 
 def autenticar(usuario, contrasena):
@@ -37,12 +38,12 @@ def autenticar(usuario, contrasena):
             return None
         sesion = Sesion(cuenta.get_id(), empleado_id)
         perfil = {"usuario": cuenta.usuario, "rol": cuenta.get_rol_acceso()}
-    _sesiones_clima[id(sesion)] = (sesion, perfil)
+    _sesiones_activas[id(sesion)] = (sesion, perfil)
     return sesion
 
 
 def cerrar_sesion(sesion):
-    _sesiones_clima.pop(id(sesion), None)
+    _sesiones_activas.pop(id(sesion), None)
 
 
 def necesita_administrador():
@@ -89,14 +90,14 @@ class GestionEcoTech:
         with obtener_conexion() as conexion:
             return self._cuenta(conexion)
 
-    def exigir_sesion_clima(self):
-        registro = _sesiones_clima.get(id(self.sesion))
+    def exigir_sesion(self):
+        registro = _sesiones_activas.get(id(self.sesion))
         if registro is None or registro[0] is not self.sesion:
-            raise AutorizacionError("Debes iniciar sesión antes de consultar el clima")
+            raise AutorizacionError("Debes iniciar sesión antes de consultar servicios externos")
         return registro[1]
 
     def perfil_menu(self):
-        perfil = self.exigir_sesion_clima()
+        perfil = self.exigir_sesion()
         try:
             cuenta = self.cuenta_actual()
         except (ConexionBaseDatosError, psycopg.OperationalError):
@@ -111,20 +112,32 @@ class GestionEcoTech:
         return dict(perfil), self.__sin_conexion
 
     def buscar_lugares_clima(self, nombre):
-        self.exigir_sesion_clima()
+        self.exigir_sesion()
         return buscar_lugares(nombre)
 
     def consultar_clima(self, latitud, longitud):
-        self.exigir_sesion_clima()
+        self.exigir_sesion()
         return consultar_clima(latitud, longitud)
 
     def inicializar_clima(self):
-        self.exigir_sesion_clima()
+        self.exigir_sesion()
         with obtener_conexion() as conexion:
             cuenta = self._cuenta(conexion)
             if cuenta.get_rol_acceso() != "administrador":
                 raise AutorizacionError("Solo un administrador puede preparar la tabla de clima")
             ClimaRepositorio(conexion).inicializar()
+
+    def consultar_dolar(self):
+        self.exigir_sesion()
+        return consultar_dolar()
+
+    def inicializar_indicadores(self):
+        self.exigir_sesion()
+        with obtener_conexion() as conexion:
+            cuenta = self._cuenta(conexion)
+            if cuenta.get_rol_acceso() != "administrador":
+                raise AutorizacionError("Solo un administrador puede preparar los indicadores")
+            IndicadorRepositorio(conexion).inicializar()
 
     def departamentos(self):
         return self._operar("departamentos", lambda c: SistemaRepositorio(c).cargar_dominio()[0])

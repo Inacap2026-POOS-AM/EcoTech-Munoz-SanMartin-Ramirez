@@ -2,6 +2,45 @@
 
 ## Avance individual E3 en la rama e3/munoz
 
+### Dólar observado y conversión de pagos
+
+Después de iniciar sesión, la opción `8 - Dólar y conversión CLP a USD` consulta
+`https://mindicador.cl/api/dolar`. Se valida que el código sea `dolar`, la unidad
+sea `Pesos` y la serie contenga valores y fechas válidos. Se selecciona la fecha
+más reciente de la serie; no se asume que el primer elemento sea el último.
+La fecha del indicador siempre se muestra, porque puede ser anterior al día de
+consulta. Fuente y documentación: https://mindicador.cl/.
+
+Los decimales del JSON se interpretan directamente como `Decimal`. Para convertir
+un pago de CLP a USD se divide el importe por los CLP de un dólar. Se aceptan
+importes positivos, de hasta dos decimales y máximo 9999999999.99 CLP, escritos
+con punto decimal y sin separadores de miles. El resultado se redondea a centavos
+con `ROUND_HALF_UP`. Es una conversión referencial: no incluye comisiones, no
+transfiere dinero y no modifica los salarios registrados. Ambos roles pueden
+convertir un importe que ingresen; esta opción no revela salarios de empleados.
+
+`datos/indicadores.sql` define la tabla `ecotech.indicador_dolar`, con una fila por
+fecha y consultas parametrizadas en `repositorio/indicador_repo.py`. Para preparar
+la tabla en otra instalación, ejecutar `python main.py --inicializar-indicadores`
+e iniciar sesión como administrador. La operación no borra datos existentes.
+
+El respaldo `datos/indicadores_local.sqlite3` se crea automáticamente y queda
+fuera de Git. Guarda valores decimales como texto para conservar su precisión.
+Ante un fallo de API o respuesta inválida, se utiliza el indicador local más
+reciente y se muestra `PLAN B`, su fecha y la antigüedad de `obtenido_en`.
+Sin un indicador previo se informa que no existe respaldo; no se inventa un tipo
+de cambio. El indicador recuperado no se vuelve a enviar a Supabase.
+
+La opción 8 permanece disponible durante una sesión ya autenticada si falla
+Supabase, junto a la opción 7 y la salida. La autorización común ahora se llama
+`exigir_sesion()`, porque protege tanto clima como indicadores.
+
+Prueba manual: iniciar sesión con internet, elegir 8 y convertir un importe.
+Después, mantener la sesión abierta, desconectar la red y repetir la opción 8.
+Debe usar el respaldo e indicar su antigüedad. Las pruebas automáticas locales de
+indicadores están en `verificaciones_indicadores.py` y se incluyen en
+`python main.py --verificar-local`.
+
 ### Contraseñas con Argon2id
 
 Instalar las dependencias actualizadas con `python -m pip install -r requirements.txt`.
@@ -60,7 +99,7 @@ límite de ejecución de 10 segundos y de espera de bloqueos de 5 segundos.
 
 El menú verifica la cuenta con Supabase. Ante una pérdida de conexión, una sesión
 ya autenticada conserva temporalmente su último perfil confirmado en memoria y
-solo ofrece clima y salida; las operaciones administrativas no se habilitan por
+solo ofrece clima, indicadores y salida; las operaciones administrativas no se habilitan por
 ese perfil local. Al salir o interrumpir la sesión se elimina su autorización para
 el clima. No se guardan contraseñas ni sesiones en SQLite. Iniciar una nueva sesión
 requiere conexión; una revocación remota solo puede comprobarse al recuperar acceso

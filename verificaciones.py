@@ -325,8 +325,10 @@ class IntegracionTest(TestCase):
 
 
 def ejecutar_verificaciones(solo_local=False):
+    from verificaciones_indicadores import IndicadoresTest
     suite = TestSuite()
     suite.addTests(TestLoader().loadTestsFromTestCase(DominioTest))
+    suite.addTests(TestLoader().loadTestsFromTestCase(IndicadoresTest))
     if not solo_local:
         suite.addTests(TestLoader().loadTestsFromTestCase(IntegracionTest))
     print("Verificaciones EcoTech: dominio, exportaciones" + ("" if solo_local else ", SQL, rollback y permisos"))

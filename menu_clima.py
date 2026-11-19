@@ -16,7 +16,7 @@ from servicios import GestionEcoTech
 def consultar_clima_menu(gestion):
     if not isinstance(gestion, GestionEcoTech):
         raise AutorizacionError("Debes iniciar sesión antes de consultar el clima")
-    gestion.exigir_sesion_clima()
+    gestion.exigir_sesion()
     try:
         respaldo = ClimaLocalRepositorio()
     except ErrorPersistencia as error:

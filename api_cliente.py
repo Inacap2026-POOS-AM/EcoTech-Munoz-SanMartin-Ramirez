@@ -5,6 +5,7 @@ import time # Pausar el programa antes de reintentar la consulta, según lo indi
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime # Convertir una fecha HTTP a datetime
 from math import isfinite
+from decimal import Decimal
 
 import requests
 
@@ -124,14 +125,18 @@ def buscar_lugares(nombre: str):
     return lugares
 
 
-def _consultar_json(url, parametros):
-    """Comparte el manejo de errores y los tres intentos entre ambos servicios."""
+def consultar_dolar():
+    return _consultar_json("https://mindicador.cl/api/dolar", {}, usar_decimal=True)
+
+
+def _consultar_json(url, parametros, usar_decimal=False):
+    """Comparte el manejo de errores y los tres intentos entre los servicios."""
     max_intentos = 3
 
     for intento in range(1, max_intentos + 1):
         logger.info("Consulta a servicio externo: intento %s de %s", intento, max_intentos)
         try:
-            return _consultar_json_una_vez(url, parametros)
+            return _consultar_json_una_vez(url, parametros, usar_decimal)
         except (ErrorHTTP, ErrorRed) as error:
             retry_after = None
             if isinstance(error, ErrorHTTP):
@@ -151,11 +156,13 @@ def _consultar_json(url, parametros):
             time.sleep(espera)
 
 
-def _consultar_json_una_vez(url, parametros):
-    """Realiza una petición para clima o búsqueda de lugares."""
+def _consultar_json_una_vez(url, parametros, usar_decimal=False):
+    """Realiza una petición para clima, lugares o indicadores económicos."""
     try:
         with requests.get(url, params=parametros, timeout=(3, 10)) as respuesta:
             respuesta.raise_for_status()
+            if usar_decimal:
+                return respuesta.json(parse_float=Decimal)
             return respuesta.json()
     except requests.exceptions.Timeout as error:
         raise ErrorRed("El servicio externo tardó demasiado en responder.") from error
@@ -191,4 +198,4 @@ def _consultar_json_una_vez(url, parametros):
     except requests.exceptions.JSONDecodeError as error:
         raise ErrorAPI("El servicio externo devolvió una respuesta JSON inválida.") from error
     except requests.exceptions.RequestException as error:
-        raise ErrorAPI("No se pudo completar la consulta de clima.") from error
+        raise ErrorAPI("No se pudo completar la consulta al servicio externo.") from error

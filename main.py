@@ -13,6 +13,7 @@ from dominio.empleado import Empleado
 from dominio.proyecto import Proyecto
 from dominio.excepciones import EcoTechError
 from menu_clima import consultar_clima_menu
+from menu_indicadores import consultar_indicadores_menu
 from repositorio.conexion import obtener_conexion
 from repositorio.sistema_repo import SistemaRepositorio
 from servicios import GestionEcoTech, autenticar, cerrar_sesion, necesita_administrador, crear_administrador_inicial
@@ -415,15 +416,16 @@ def menu_principal(gestion):
         else:
             opciones = [("3", "Mis proyectos"), ("4", "Mis horas"), ("6", "Contraseña"), ("0", "Salir")]
         if sin_conexion:
-            print("Supabase no está disponible. La sesión actual permite consultar clima y su respaldo local.")
-            opciones = [("7", "Consultar clima"), ("0", "Salir")]
+            print("Supabase no está disponible. La sesión actual permite consultar clima e indicadores con sus respaldos.")
+            opciones = [("7", "Consultar clima"), ("8", "Dólar y conversión CLP a USD"), ("0", "Salir")]
         else:
             opciones.insert(-1, ("7", "Consultar clima"))
+            opciones.insert(-1, ("8", "Dólar y conversión CLP a USD"))
         mostrar_menu("MENÚ PRINCIPAL", opciones)
         opcion = input("Opción: ").strip()
         if opcion == "0":
             return
-        if sin_conexion and opcion != "7":
+        if sin_conexion and opcion not in ("7", "8"):
             print("Esta operación requiere conexión con Supabase.")
             continue
         def accion():
@@ -444,6 +446,8 @@ def menu_principal(gestion):
                 print("Contraseña actualizada.")
             elif opcion == "7":
                 consultar_clima_menu(gestion)
+            elif opcion == "8":
+                consultar_indicadores_menu(gestion)
             else:
                 print("Opción inválida o no autorizada.")
         intentar(accion)
@@ -456,6 +460,7 @@ def main():
     grupo.add_argument("--verificar", action="store_true", help="Pruebas locales y de BD con rollback")
     grupo.add_argument("--verificar-local", action="store_true", help="Pruebas sin conexión a BD")
     grupo.add_argument("--inicializar-clima", action="store_true", help="Preparar tabla de clima tras iniciar sesión como administrador")
+    grupo.add_argument("--inicializar-indicadores", action="store_true", help="Preparar tabla del dólar tras iniciar sesión como administrador")
     args = parser.parse_args()
     try:
         if args.verificar or args.verificar_local:
@@ -478,6 +483,9 @@ def main():
             if args.inicializar_clima:
                 gestion.inicializar_clima()
                 print("Tabla de clima preparada. Los datos existentes se conservaron.")
+            elif args.inicializar_indicadores:
+                gestion.inicializar_indicadores()
+                print("Tabla de indicadores preparada. Los datos existentes se conservaron.")
             else:
                 menu_principal(gestion)
         finally:
