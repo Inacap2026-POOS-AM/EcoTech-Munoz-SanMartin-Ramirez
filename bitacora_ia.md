@@ -2,19 +2,23 @@
 
 Herramienta: ChatGPT / Codex. Trabajé en mi rama `e3/munoz` entre el 13 y el 18 de noviembre de 2026, sobre la base de EcoTech de E2. Usé la IA para generar y revisar código, y pedí explicaciones por partes antes de continuar.
 
-## Consultas y decisiones
+## Prompts, respuestas y cambios en el código
 
-| Trabajo solicitado | Decisión | Justificación |
+Las citas son extractos de mis mensajes del chat. Las respuestas de Codex están resumidas. Los archivos y commits permiten ubicar cada cambio en mi rama.
+
+| Prompt real | Respuesta de Codex y decisión | Componente generado y comprobación |
 |---|---|---|
-| Revisar el proyecto y preparar la consulta de clima | Acepto con cambios | Se aprovecharon las clases existentes. La primera consulta se amplió con timeout, errores HTTP diferenciados, tres intentos y logs. |
-| Consultar el clima por coordenadas | Modifico | Pedí buscar por nombre. Ahora se muestran coincidencias con región y país para elegir el lugar. |
-| Procesar el diccionario de la API | Modifico | Se agregaron deserializadores y objetos propios para validar los datos antes de guardarlos. |
-| Mantener Supabase durante un corte de Ethernet | Modifico | Se agregó SQLite como respaldo. La copia se guarda primero y conserva su fecha original de obtención. |
-| Dejar un script independiente para consultar clima | Descarto para la entrega | Su flujo se integró al menú para exigir login antes de consultar la API o el respaldo. |
-| Conservar Werkzeug y compatibilidad con PBKDF2 | Descarto | Se reiniciaron los datos de prueba por decisión mía y se dejó solo Argon2id, con sal aleatoria. |
-| Agregar dólar y conversión de pagos | Acepto | Se comprueban unidad, valor y fecha de mindicador.cl. El cálculo usa Decimal y no modifica salarios ni transfiere dinero. |
+| «no hay alguna manera de que sea por el nombre del lugar?» | **Modifico.** Pedí que el usuario escribiera una ciudad. Codex propuso buscar coincidencias con Open-Meteo, mostrar región y país y pasar las coordenadas elegidas al cliente de clima. | `buscar_lugares()` en `api_cliente.py`, commit `d2ca497`. Busqué `concepcion`, elegí la opción del Biobío y vi en el log las peticiones de búsqueda y clima. |
 
-Entre las solicitudes del chat estuvieron: «explicame todo el codigo porque debo entenderlo» y «no hay alguna manera de que sea por el nombre del lugar?». Se revisaron los bloques y se acordaron los mensajes de commit antes de subir los avances.
+## Decisión — Respaldo con SQLite
+
+**Consulta que hice.** «la base de datos que tengo no se podria usar en la prueba sin conexion?» Luego aclaré que el profesor me había dicho que podía usar Supabase y que cortaría Ethernet durante la ejecución.
+
+**Propuesta y decisión.** Codex propuso mantener Supabase como base principal y agregar SQLite como respaldo. Acepté la propuesta porque tanto la API como Supabase requieren conexión. El programa guarda primero una copia local de los datos válidos y después intenta guardarlos en Supabase. Si falla la consulta, puede mostrar el último dato guardado y conservar su fecha de obtención.
+
+**Dónde quedó el cambio.** `repositorio/clima_local_repo.py` guarda y recupera el último clima por coordenadas. `menu_clima.py` usa ese respaldo si falla la consulta y calcula su antigüedad con `obtenido_en`. El respaldo de clima y su integración al menú quedaron en el commit `9ce1ec7`.
+
+**Cómo lo probé.** Guardé el clima de un lugar con internet y desconecté Ethernet con la sesión abierta. Al consultar el mismo lugar, EcoTech mostró el dato guardado y el aviso del Plan B con su antigüedad. El menú quedó limitado a clima y salida. Al reconectar, volvieron las opciones normales.
 
 ## Auditoría de las cinco señales de riesgo
 
@@ -34,4 +38,4 @@ En mi equipo probé clima, consultas repetidas, cambio de contraseña y conversi
 
 En la revisión final pasaron 15 pruebas locales y 17 incluyendo Supabase. Se comprobaron guardados repetidos de ambos servicios con datos temporales que se revirtieron. Un endpoint real inexistente devolvió 404 sin reintentos. También se verificó Argon2id en la base sin mostrar hashes, y que `.env` y los respaldos no estén versionados.
 
-Se necesita internet para iniciar sesión. El respaldo permite continuar si la conexión se pierde después de entrar; no cambia su `obtenido_en` al leerse. Sin datos previos muestra un aviso. El indicador del dólar puede ser de un día anterior y por eso siempre se muestra su fecha.
+Se necesita internet para iniciar sesión. El respaldo permite continuar si la conexión se pierde después de entrar y conserva su `obtenido_en` original. Sin datos previos muestra un aviso. El indicador del dólar puede ser de un día anterior y por eso siempre se muestra su fecha.
