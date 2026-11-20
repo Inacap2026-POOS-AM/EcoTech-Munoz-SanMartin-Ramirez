@@ -1,0 +1,13 @@
+Comando: python demostracion_es3.py
+Datos sintéticos de demostración; servicios HTTP simulados.
+Vuelta 1 Parcialmente nublado · pago CLP 2375 · filas 2
+Vuelta 2 Parcialmente nublado · pago CLP 2375 · filas 2
+Respaldo local · Conexión no disponible. Consulta aplazada. · obtenido_en 2026-11-20T13:22:33.635107+00:00 · antigüedad 0 min · Open-Meteo · https://open-meteo.com
+Respaldo local · HTTP 404 · obtenido_en 2026-11-20T13:22:33.635209+00:00 · antigüedad 0 min · Rates By Exchange Rate API · https://www.exchangerate-api.com
+429 y 503 recuperados: 2375
+429 largo: Respaldo local · HTTP 429. Consulta aplazada. · obtenido_en 2026-11-20T13:22:33.636156+00:00 · antigüedad 0 min · Rates By Exchange Rate API · https://www.exchangerate-api.com
+Nueva consulta durante Retry-After: Respaldo local · HTTP 429. Retry-After todavía vigente. · obtenido_en 2026-11-20T13:22:33.636156+00:00 · antigüedad 0 min · Rates By Exchange Rate API · https://www.exchangerate-api.com
+Llamadas nuevas al proveedor durante el 429 largo: 1
+Formato del hash: argon2id
+
+Código de salida: 0

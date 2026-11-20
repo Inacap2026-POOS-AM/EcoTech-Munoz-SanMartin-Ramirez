@@ -1,0 +1,22 @@
+[
+  {
+    "proveedor": "Open-Meteo",
+    "verificado": true,
+    "datos": {
+      "fecha_fuente": "2026-11-20T13:15:00+00:00",
+      "temperatura_C": 16.6,
+      "humedad_pct": 72,
+      "estado": "Mayormente despejado"
+    }
+  },
+  {
+    "proveedor": "ExchangeRate-API",
+    "verificado": true,
+    "datos": {
+      "fecha_fuente": "2026-11-20T00:02:32+00:00",
+      "base": "USD",
+      "destino": "CLP",
+      "tasa": "1007.791135"
+    }
+  }
+]

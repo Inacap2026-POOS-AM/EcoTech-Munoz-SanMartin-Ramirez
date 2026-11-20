@@ -1,0 +1,11 @@
+{
+  "alcance": "Patrones AST y versiones instaladas; referencias PyPI en DEPENDENCIAS_VERIFICADAS.md",
+  "llamadas_http_con_timeout": 1,
+  "hallazgos": [],
+  "paquetes_instalados": {
+    "cryptography": "50.0.0",
+    "reportlab": "4.4.9",
+    "openpyxl": "3.1.5",
+    "pypdf": "6.21.4"
+  }
+}

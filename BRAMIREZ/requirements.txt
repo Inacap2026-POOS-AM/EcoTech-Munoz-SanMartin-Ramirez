@@ -1,0 +1,6 @@
+cryptography>=45,<52
+reportlab>=4,<5
+openpyxl>=3.1,<4
+
+# Lector empleado para comprobar los PDF en las pruebas.
+pypdf>=6,<7

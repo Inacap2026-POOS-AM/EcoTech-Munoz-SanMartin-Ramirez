@@ -1,0 +1,52 @@
+Comando: python -m unittest -v
+{"fecha": "2026-11-20T10:22:33-03:00", "python": "3.12.14", "pruebas": 28, "errores": 0, "fallos": 0, "omitidas": 0, "correcto": true}
+
+test_argon2_con_sal_distinta_y_sin_clave_en_la_base (test_checklist_e3.ConfiguracionYPersonas.test_argon2_con_sal_distinta_y_sin_clave_en_la_base) ... ok
+test_exportaciones_reales_y_texto_excel_no_formula (test_checklist_e3.ConfiguracionYPersonas.test_exportaciones_reales_y_texto_excel_no_formula) ... ok
+test_log_local_privado_y_configurado (test_checklist_e3.ConfiguracionYPersonas.test_log_local_privado_y_configurado) ... 2026-11-20 10:22:32,702 INFO ecotech.api intento=1/3 timeout=5s
+ok
+test_rut_se_valida_se_cifra_y_se_recupera_tras_migracion (test_checklist_e3.ConfiguracionYPersonas.test_rut_se_valida_se_cifra_y_se_recupera_tras_migracion) ... ok
+test_secretos_faltantes_y_prioridad_de_os_getenv (test_checklist_e3.ConfiguracionYPersonas.test_secretos_faltantes_y_prioridad_de_os_getenv) ... ok
+test_validacion_de_rut_correo_y_tipos (test_checklist_e3.ConfiguracionYPersonas.test_validacion_de_rut_correo_y_tipos) ... ok
+test_cache_corrupta_no_se_usa_a_ciegas (test_checklist_e3.DatosYPersistencia.test_cache_corrupta_no_se_usa_a_ciegas) ... ok
+test_coordenadas_y_moneda_invalidas_no_llaman_al_proveedor (test_checklist_e3.DatosYPersistencia.test_coordenadas_y_moneda_invalidas_no_llaman_al_proveedor) ... ok
+test_datos_invalidos_no_se_persisten (test_checklist_e3.DatosYPersistencia.test_datos_invalidos_no_se_persisten) ... ok
+test_deserializador_entrega_objetos_tipados_y_validados (test_checklist_e3.DatosYPersistencia.test_deserializador_entrega_objetos_tipados_y_validados) ... ok
+test_respaldo_reconstruye_el_tipo_y_muestra_antiguedad (test_checklist_e3.DatosYPersistencia.test_respaldo_reconstruye_el_tipo_y_muestra_antiguedad) ... ok
+test_429_largo_bloquea_nuevas_consultas_al_mismo_proveedor (test_checklist_e3.TransporteSeguro.test_429_largo_bloquea_nuevas_consultas_al_mismo_proveedor) ... ok
+test_entrada_no_https_y_redireccion_no_se_aceptan (test_checklist_e3.TransporteSeguro.test_entrada_no_https_y_redireccion_no_se_aceptan) ... ok
+test_log_de_cada_intento_backoff_y_timeout_sin_secretos (test_checklist_e3.TransporteSeguro.test_log_de_cada_intento_backoff_y_timeout_sin_secretos) ... ok
+test_respuesta_malformada_sobredimensionada_o_no_objeto (test_checklist_e3.TransporteSeguro.test_respuesta_malformada_sobredimensionada_o_no_objeto) ... ok
+test_retry_after_fecha_http_y_valor_invalido (test_checklist_e3.TransporteSeguro.test_retry_after_fecha_http_y_valor_invalido) ... ok
+test_tls_invalido_no_se_reintenta_ni_expone_detalle (test_checklist_e3.TransporteSeguro.test_tls_invalido_no_se_reintenta_ni_expone_detalle) ... ok
+test_clave_y_permisos (test_ecotech.PruebasEcoTech.test_clave_y_permisos) ... ok
+test_crud_mapeo_bajas_rollback (test_ecotech.PruebasEcoTech.test_crud_mapeo_bajas_rollback) ... ok
+test_cuenta_empleado_y_registro_propio (test_ecotech.PruebasEcoTech.test_cuenta_empleado_y_registro_propio) ... ok
+test_exportaciones (test_ecotech.PruebasEcoTech.test_exportaciones) ... ok
+test_invariantes_tiempo (test_ecotech.PruebasEcoTech.test_invariantes_tiempo) ... ok
+test_rechazo_de_claves_vacias (test_ecotech.PruebasEcoTech.test_rechazo_de_claves_vacias) ... ok
+test_clima_repetido_y_corte (test_servicios.PruebasAPI.test_clima_repetido_y_corte) ... fuente=Open-Meteo · https://open-meteo.com resultado=respaldo_solicitado
+fuente=Open-Meteo · https://open-meteo.com resultado=respaldo_solicitado
+ok
+test_conversion_y_datos_invalidos (test_servicios.PruebasAPI.test_conversion_y_datos_invalidos) ... fuente=Rates By Exchange Rate API · https://www.exchangerate-api.com resultado=respaldo_solicitado
+ok
+test_http_y_reintentos (test_servicios.PruebasAPI.test_http_y_reintentos) ... solicitud=9663b6b4 resultado=HTTP_400
+solicitud=9409b91a resultado=HTTP_401
+solicitud=d7facb47 resultado=HTTP_403
+solicitud=36afbf91 resultado=HTTP_404
+solicitud=619dfa95 resultado=HTTP_429
+solicitud=619dfa95 resultado=HTTP_503
+solicitud=95948c4e resultado=fallo_red
+solicitud=95948c4e resultado=fallo_red
+solicitud=95948c4e resultado=fallo_red
+solicitud=95948c4e resultado=aplazado espera_s=4
+solicitud=2743ac4f resultado=HTTP_429
+solicitud=2743ac4f resultado=aplazado espera_s=120
+ok
+test_proveedor_autenticado_simulado (test_servicios.PruebasAPI.test_proveedor_autenticado_simulado) ... ok
+test_sesion (test_servicios.PruebasAPI.test_sesion) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 1.006s
+
+OK

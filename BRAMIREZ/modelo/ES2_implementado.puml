@@ -1,0 +1,29 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide circle
+abstract class Persona
+class Empleado
+class Departamento
+class Proyecto
+class AsignacionProyecto
+class RegistroTiempo
+class Usuario
+class Rol
+class ServicioInformes
+class Informe
+abstract class ExportadorInforme
+class ExportadorPDF
+class ExportadorExcel
+Persona <|-- Empleado
+Departamento "0..1" o-- "0..*" Empleado : agrupa
+Departamento "0..1" --> "0..1" Empleado : gerente activo
+Empleado "1" -- "0..*" AsignacionProyecto
+Proyecto "1" -- "0..*" AsignacionProyecto
+AsignacionProyecto "1" -- "0..*" RegistroTiempo
+Usuario "0..*" --> "1" Rol : perfil local
+ServicioInformes ..> Informe
+ServicioInformes ..> ExportadorInforme
+ExportadorInforme <|-- ExportadorPDF
+ExportadorInforme <|-- ExportadorExcel
+@enduml

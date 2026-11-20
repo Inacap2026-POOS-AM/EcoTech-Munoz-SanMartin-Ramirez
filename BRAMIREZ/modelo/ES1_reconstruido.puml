@@ -1,0 +1,178 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+hide circle
+
+title EcoTech Solutions - Diagrama de clases final
+
+package "Dominio organizacional" {
+abstract class Persona {
+-id: UUID
+-nombre: String
+-direccion: String
+-telefono: String
+-correo: String
++actualizarContacto(direccion: String, telefono: String, correo: String): void
++validarCorreo(): bool
+}
+
+class Empleado {
+-fechaInicioContrato: Date
+-salarioCifrado: Decimal
+-activo: bool
++reasignarDepartamento(departamento: Departamento): void
++registrarTiempo(proyecto: Proyecto, fecha: Date, horas: Decimal, descripcion: String): RegistroTiempo
++asignarProyecto(proyecto: Proyecto, rol: String): AsignacionProyecto
++desasignarProyecto(proyecto: Proyecto): void
+}
+
+class Departamento {
+-id: UUID
+
+
+
+
+-nombre: String
++cambiarNombre(nombre: String): void
++asignarGerente(gerente: Empleado): void
++agregarEmpleado(empleado: Empleado): void
++removerEmpleado(empleado: Empleado): void
+}
+
+class Proyecto {
+-id: UUID
+-nombre: String
+-descripcion: String
+-fechaInicio: Date
+-estado: EstadoProyecto
++actualizarDatos(nombre: String, descripcion: String): void
++cambiarEstado(estado: EstadoProyecto): void
++asignarEmpleado(empleado: Empleado, rol: String): AsignacionProyecto
++desasignarEmpleado(empleado: Empleado): void
+}
+
+class AsignacionProyecto {
+-id: UUID
+-fechaAsignacion: Date
+-rol: String
+-activa: bool
++finalizar(fecha: Date): void
++cambiarRol(rol: String): void
+}
+
+class RegistroTiempo {
+-id: UUID
+-fecha: Date
+-horas: Decimal
+-descripcion: String
+-creadoEn: DateTime
++validarHoras(): bool
++editar(horas: Decimal, descripcion: String): void
+}
+
+enum EstadoProyecto {
+PLANIFICADO
+ACTIVO
+PAUSADO
+FINALIZADO
+}
+}
+
+package "Seguridad y acceso" {
+class Usuario {
+-id: UUID
+-nombreUsuario: String
+-hashContrasena: String
+-activo: bool
+-intentosFallidos: int
++autenticar(contrasena: String): bool
++cambiarContrasena(actual: String, nueva: String): void
++tienePermiso(permiso: String): bool
++bloquear(): void
+}
+
+class Rol {
+-id: UUID
+-nombre: String
++agregarPermiso(permiso: Permiso): void
++removerPermiso(permiso: Permiso): void
+}
+
+class Permiso {
+-id: UUID
+-codigo: String
+-descripcion: String
+}
+}
+
+package "Aplicacion e informes" {
+interface ExportadorInforme {
++exportar(informe: Informe): Archivo
+
+
+
+
+
+}
+
+class ExportadorPDF {
++exportar(informe: Informe): Archivo
+}
+
+class ExportadorExcel {
++exportar(informe: Informe): Archivo
+}
+
+class Informe {
+-id: UUID
+-tipo: TipoInforme
+-fechaGeneracion: DateTime
+-filtros: Map
++obtenerDatos(): Dataset
+}
+
+class ServicioInformes {
++generar(tipo: TipoInforme, filtros: Map, exportador: ExportadorInforme): Archivo
+}
+
+enum TipoInforme {
+EMPLEADOS
+DEPARTAMENTOS
+PROYECTOS
+HORAS_TRABAJADAS
+}
+}
+
+Persona <|-- Empleado
+Departamento "1" o-- "0..*" Empleado : agrupa
+Departamento "0..1" --> "1" Empleado : gerente
+Empleado "1" -- "0..*" AsignacionProyecto
+Proyecto "1" *-- "0..*" AsignacionProyecto
+Empleado "1" -- "0..*" RegistroTiempo : registra
+Proyecto "1" -- "0..*" RegistroTiempo : recibe horas
+Empleado "1" -- "0..1" Usuario : credencial
+Usuario "0..*" -- "1..*" Rol
+Rol "0..*" -- "1..*" Permiso
+ExportadorInforme <|.. ExportadorPDF
+ExportadorInforme <|.. ExportadorExcel
+ServicioInformes ..> Informe : crea
+ServicioInformes ..> ExportadorInforme : usa
+Informe ..> Empleado
+Informe ..> Departamento
+Informe ..> Proyecto
+Informe ..> RegistroTiempo
+
+note right of RegistroTiempo
+Restricciones:
+- 0 < horas <= 24
+- fecha no futura
+- empleado asignado al proyecto
+end note
+
+note bottom of Usuario
+La contrasena no se almacena en texto plano.
+Se utiliza un hash adaptativo con sal unica.
+end note
+@enduml
