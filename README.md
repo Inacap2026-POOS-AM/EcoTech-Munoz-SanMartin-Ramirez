@@ -1,4 +1,4 @@
-# EcoTech — Evaluación Sumativa 2
+﻿# EcoTech — Evaluación Sumativa 2
 
 Aplicación de consola en Python basada en el UML de ES1. Administra empleados,
 departamentos, proyectos, cuentas y horas con persistencia PostgreSQL en Supabase.
@@ -43,7 +43,7 @@ python main.py --inicializar
 
 La opción comprueba si las tablas ya existen y no borra datos. Si encuentra una
 instalación parcial, informa el problema; no elimina tablas para repararla.
-El esquema es ecotech. Las seis tablas tienen RLS habilitado. La consola se conecta
+El esquema es ecotech. Las seis tablas originales y la tabla ambiental tienen RLS habilitado. La consola se conecta
 mediante el usuario PostgreSQL del proyecto (normalmente postgres a través del pooler),
 que puede operar como propietario; no utiliza anon/authenticated ni Data API.
 No se deben exponer estas credenciales en una aplicación web o cliente público.
@@ -90,12 +90,18 @@ EcoTech/
     persona.py, empleado.py, departamento.py, proyecto.py
     cuenta_usuario.py, registro_tiempo.py
     informe.py, informe_pdf.py, informe_excel.py
+    medicion_calidad_aire.py
     excepciones.py, validaciones.py, __init__.py
+  integraciones/
+    cliente_calidad_aire.py, servicio_calidad_aire.py
   repositorio/
     conexion.py, departamento_repo.py, empleado_repo.py
     cuenta_usuario_repo.py, proyecto_repo.py, registro_tiempo_repo.py
+    medicion_calidad_aire_repo.py
     sistema_repo.py, __init__.py
-  datos/schema.sql
+  datos/
+    schema.sql
+    medicion_calidad_aire.sql
   servicios.py
   main.py
   verificaciones.py
@@ -234,3 +240,72 @@ sin atribuir todo el código generado a un integrante.
 - Werkzeug: https://werkzeug.palletsprojects.com/en/stable/utils/
 - ReportLab: https://docs.reportlab.com/reportlab/userguide/ch5_platypus/
 - openpyxl: https://openpyxl.readthedocs.io/en/stable/tutorial.html
+
+## Integración de calidad del aire
+
+El sistema incorpora una consulta de calidad del aire para Santiago de Chile
+mediante la API de Open-Meteo Air Quality. No requiere una API key, pero sí
+conexión a Internet para consultar mediciones actuales.
+
+### Configuración
+
+Las variables se configuran en `.env` y sus valores de referencia están en
+`.env.example`:
+
+- `AIR_QUALITY_LATITUDE`: latitud de la ubicación consultada.
+- `AIR_QUALITY_LONGITUDE`: longitud de la ubicación consultada.
+- `AIR_QUALITY_TIMEZONE`: zona horaria utilizada para las fechas de medición.
+
+La configuración predeterminada corresponde a Santiago:
+latitud `-33.4489`, longitud `-70.6693` y zona horaria `America/Santiago`.
+
+### Funcionamiento
+
+La opción 7, Calidad del aire, está disponible en los menús de administrador
+y empleado. Consulta los valores actuales de:
+
+- PM2.5: concentración de partículas finas.
+- PM10: concentración de partículas.
+- US AQI: índice de calidad del aire.
+
+El cliente HTTP contempla tiempo de espera, reintentos ante errores temporales
+y tratamiento diferenciado de errores HTTP.
+
+Cuando la API responde correctamente, el servicio intenta guardar la medición
+en PostgreSQL. Si la API falla, intenta recuperar la última medición guardada.
+Si no hay una medición disponible en el respaldo, informa el error.
+Si la API funciona pero falla el almacenamiento, puede mostrar la medición
+actual indicando que no quedó guardada.
+
+### Persistencia
+
+La funcionalidad utiliza una tabla independiente:
+`ecotech.medicion_calidad_aire`.
+
+Para instalarla en una base que ya tiene el esquema principal, ejecutar
+una sola vez `datos/medicion_calidad_aire.sql` desde el SQL Editor de Supabase.
+
+La tabla almacena PM2.5, PM10, US AQI, fecha de medición, coordenadas y fecha
+de almacenamiento. Incluye restricciones para validar los rangos de los datos
+y tiene Row Level Security (RLS) habilitado.
+
+Esta migración es independiente de `datos/schema.sql`, que crea las seis
+tablas originales del sistema.
+
+### Componentes
+
+- `dominio/medicion_calidad_aire.py`: modelo y validaciones de la medición.
+- `integraciones/cliente_calidad_aire.py`: comunicación con Open-Meteo.
+- `integraciones/servicio_calidad_aire.py`: coordinación entre API y respaldo.
+- `repositorio/medicion_calidad_aire_repo.py`: persistencia y recuperación.
+- `datos/medicion_calidad_aire.sql`: creación de la tabla ambiental.
+- `main.py`: presentación de la opción de calidad del aire en los menús.
+
+### Verificación
+
+La integración se comprobó mediante pruebas de deserialización, manejo de
+errores HTTP, reintentos, persistencia en Supabase y recuperación de una
+medición almacenada cuando falla la consulta externa.
+
+También se verificó el funcionamiento desde la aplicación de consola con
+una consulta real a Open-Meteo y almacenamiento en PostgreSQL.
