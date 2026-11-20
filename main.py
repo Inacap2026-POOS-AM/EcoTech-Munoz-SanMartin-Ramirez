@@ -398,20 +398,62 @@ def iniciar_sesion():
     return None
 
 
+
+
+def mostrar_calidad_aire():
+    from integraciones.servicio_calidad_aire import ServicioCalidadAire
+    from integraciones.cliente_calidad_aire import ErrorCalidadAire
+
+    try:
+        resultado = ServicioCalidadAire().obtener_medicion()
+        medicion = resultado.medicion
+
+        mostrar_ficha("CALIDAD DEL AIRE - SANTIAGO", [
+            ("PM2.5", f"{medicion.pm2_5} \u00b5g/m\u00b3"),
+            ("PM10", f"{medicion.pm10} \u00b5g/m\u00b3"),
+            ("\u00cdndice US AQI", medicion.us_aqi),
+            ("Fecha de medici?n", medicion.fecha_hora),
+            ("Fuente", "Respaldo PostgreSQL" if resultado.desde_respaldo else "API Open-Meteo"),
+            ("Estado de almacenamiento", "Guardada en PostgreSQL" if resultado.guardada else "No guardada en PostgreSQL"),
+            ("Fecha de almacenamiento", resultado.obtenido_en or "No disponible"),
+        ])
+
+    except ErrorCalidadAire as error:
+        print("\nNo fue posible obtener la calidad del aire:", error)
+
+
 def menu_principal(gestion):
     while True:
         cuenta = gestion.cuenta_actual()
         administrador = cuenta.get_rol_acceso() == "administrador"
         mostrar_ficha("EcoTech", [("Usuario", cuenta.usuario), ("Rol", cuenta.get_rol_acceso())])
+
         if administrador:
-            opciones = [("1", "Departamentos"), ("2", "Empleados"), ("3", "Proyectos"),
-                        ("4", "Horas"), ("5", "Informes"), ("6", "Contraseña"), ("0", "Salir")]
+            opciones = [
+                ("1", "Departamentos"),
+                ("2", "Empleados"),
+                ("3", "Proyectos"),
+                ("4", "Horas"),
+                ("5", "Informes"),
+                ("6", "Contrase?a"),
+                ("7", "Calidad del aire"),
+                ("0", "Salir"),
+            ]
         else:
-            opciones = [("3", "Mis proyectos"), ("4", "Mis horas"), ("6", "Contraseña"), ("0", "Salir")]
-        mostrar_menu("MENÚ PRINCIPAL", opciones)
-        opcion = input("Opción: ").strip()
+            opciones = [
+                ("3", "Mis proyectos"),
+                ("4", "Mis horas"),
+                ("6", "Contrase?a"),
+                ("7", "Calidad del aire"),
+                ("0", "Salir"),
+            ]
+
+        mostrar_menu("MEN? PRINCIPAL", opciones)
+        opcion = input("Opci?n: ").strip()
+
         if opcion == "0":
             return
+
         def accion():
             if opcion == "1" and administrador:
                 menu_departamentos(gestion)
@@ -424,12 +466,15 @@ def menu_principal(gestion):
             elif opcion == "5" and administrador:
                 generar_informes(gestion)
             elif opcion == "6":
-                actual = getpass("Contraseña actual: ")
+                actual = getpass("Contrase?a actual: ")
                 nueva = leer_clave()
                 gestion.cambiar_contrasena(actual, nueva)
-                print("Contraseña actualizada.")
+                print("Contrase?a actualizada.")
+            elif opcion == "7":
+                mostrar_calidad_aire()
             else:
-                print("Opción inválida o no autorizada.")
+                print("\u004f\u0070\u0063\u0069\u00f3\u006e \u0069\u006e\u0076\u00e1\u006c\u0069\u0064\u0061 \u006f \u006e\u006f \u0061\u0075\u0074\u006f\u0072\u0069\u007a\u0061\u0064\u0061")
+
         intentar(accion)
 
 
