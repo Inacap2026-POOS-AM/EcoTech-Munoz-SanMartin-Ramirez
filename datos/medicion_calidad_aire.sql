@@ -11,3 +11,12 @@ CREATE TABLE IF NOT EXISTS ecotech.medicion_calidad_aire (
 
 ALTER TABLE ecotech.medicion_calidad_aire
 ENABLE ROW LEVEL SECURITY;
+
+-- Evita registrar dos veces la misma observación
+-- para una misma ubicación.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_medicion_calidad_aire_observacion
+ON ecotech.medicion_calidad_aire (
+    fecha_hora,
+    latitud,
+    longitud
+);

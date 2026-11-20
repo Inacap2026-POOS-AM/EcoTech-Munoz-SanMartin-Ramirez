@@ -16,6 +16,12 @@ class MedicionCalidadAireRepositorio:
                 pm2_5, pm10, us_aqi, fecha_hora, latitud, longitud
             )
             VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (fecha_hora, latitud, longitud)
+            DO UPDATE SET
+                pm2_5 = EXCLUDED.pm2_5,
+                pm10 = EXCLUDED.pm10,
+                us_aqi = EXCLUDED.us_aqi,
+                obtenido_en = CURRENT_TIMESTAMP
             RETURNING pm2_5, pm10, us_aqi, fecha_hora,
                       latitud, longitud, obtenido_en
         """
