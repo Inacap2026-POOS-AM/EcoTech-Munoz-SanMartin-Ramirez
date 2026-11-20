@@ -5,7 +5,6 @@ Herramienta: ChatGPT con Codex. Esta revisión y sus cambios fueron realizados p
 ## Interacciones comprobables de esta continuación
 
 - Instrucción literal: «recuerda que no hagas cambio en el repo es personal y ese repo es de mas de una persona».
-- Instrucción literal: «sigue trabajando».
 - Respuesta de trabajo: «Revisaré el contexto y los archivos disponibles para retomar la tarea, manteniendo cualquier trabajo fuera del repositorio compartido».
 - Contexto consultado: HANDOFF_TI3021_PROGRAMACION.md, guías auténticas y código local de preparación. El enunciado de trabajo conservado en Pasted text.txt solicita completar las tareas sin enviarlas.
 
