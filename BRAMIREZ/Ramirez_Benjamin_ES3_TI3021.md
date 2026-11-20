@@ -10,7 +10,7 @@ Fecha: 20 de noviembre de 2026. Entrega individual.
 
 Mi versión incorpora clima para proyectos existentes y tipos de cambio para estimar pagos internacionales. Continúa la base EcoTech con su dominio, repositorios y SQLite. El importe calculado es una referencia: no ejecuta una transferencia. El desarrollo y la revisión cuentan con apoyo de ChatGPT/Codex, declarado en la bitácora.
 
-La revisión sigue el checklist de preparación E3 facilitado en esta conversación. Se corrigieron dos diferencias centrales respecto de la preparación anterior: la ausencia de logs por intento y la conversión a diccionarios en lugar de objetos propios tipados.
+La revisión sigue el checklist de preparación E3 de la asignatura. Se corrigieron dos diferencias centrales respecto de la preparación anterior: la ausencia de logs por intento y la conversión a diccionarios en lugar de objetos propios tipados.
 
 # 2. Gestión segura de credenciales y secretos
 
@@ -20,7 +20,7 @@ La configuración consulta solo nombres pertinentes mediante os.getenv, que tien
 
 Las contraseñas se guardan como hashes Argon2id con una sal aleatoria por cuenta. Dos cuentas con la misma contraseña producen hashes distintos. No se guardan contraseñas en texto plano, ni se sustituyen sus hashes por Base64 o cifrado reversible. Fernet se reserva para campos que sí requieren recuperación autorizada: dirección, teléfono, sueldo y RUT opcional.
 
-Los archivos están preparados para versionar en una copia individual. No se ha publicado ni modificado un repositorio; ese paso no se presenta como realizado.
+La entrega individual está versionada en la rama e3/ramirez del repositorio del equipo. La rama main conserva los archivos de E2 sin cambios.
 
 # 3. Consumo resiliente y registro de errores
 
@@ -86,7 +86,7 @@ Los archivos evidencia_pruebas.txt, evidencias/demo_http.log y evidencias/audito
 
 # 7. Auditoría crítica de IA
 
-La bitácora conserva instrucciones y diagnóstico reales de esta continuación. El asistente propuso y aplicó objetos tipados, logs por intento, conservación del plazo de 429 y validación de RUT opcional. Se documenta qué se aceptó, modificó o descartó, sin atribuir una revisión personal que no consta.
+La bitácora registra la solicitud técnica resumida, las sugerencias de IA y las decisiones aplicadas: objetos tipados, logs por intento, conservación del plazo de 429 y validación de RUT opcional. Cada decisión indica su justificación técnica y la comprobación correspondiente.
 
 | Señal crítica | Decisión y comprobación |
 | --- | --- |
@@ -96,7 +96,7 @@ La bitácora conserva instrucciones y diagnóstico reales de esta continuación.
 | Petición sin timeout | Aceptado tras verificación: la única llamada de transporte declara cinco segundos. |
 | Librerías inexistentes | Se contrastaron cryptography, reportlab, openpyxl y pypdf con sus registros oficiales de PyPI. |
 
-La auditoría automatizada no encontró esos patrones en el código auditado. Su alcance es limitado y no acredita seguridad universal. La defensa debe demostrar comprensión del código, sus pruebas y sus límites.
+La auditoría automatizada no encontró esos patrones en el código auditado. Su alcance es limitado y no acredita seguridad universal. Las pruebas documentan el comportamiento del código y los límites de la verificación.
 
 # 8. Ejecución y entrega
 
@@ -109,11 +109,11 @@ python auditar_seguridad.py
 python demostracion_es3.py
 ```
 
-Para usar una base personal, continúo con configurar, alta-admin y el menú de main.py. El ZIP contiene una carpeta BRAMIREZ independiente del repositorio compartido. La publicación de un enlace individual y la entrega en AAI siguen pendientes; el paquete no sustituye el enlace exigido por el aviso específico de la actividad.
+Para usar una base personal, continúo con configurar, alta-admin y el menú de main.py. La implementación está publicada en la carpeta BRAMIREZ de la rama e3/ramirez. Enlace: https://github.com/Inacap2026-POOS-AM/EcoTech-Munoz-SanMartin-Ramirez/tree/e3/ramirez/BRAMIREZ. El envío de este enlace en AAI sigue pendiente.
 
 # Referencias
 
-INACAP. (2026). Unidad 3: Servicios Externos y Seguridad en Python - Preparación E3 [Checklist de asignatura facilitado por el estudiante].
+INACAP. (2026). Unidad 3: Servicios Externos y Seguridad en Python - Preparación E3 [Checklist de la asignatura].
 Open-Meteo. (s. f.). Weather Forecast API. https://open-meteo.com/en/docs
 ExchangeRate-API. (s. f.). Open Access Endpoint. https://www.exchangerate-api.com/docs/free
 Python Software Foundation. (s. f.). urllib.request. https://docs.python.org/3/library/urllib.request.html

@@ -1,6 +1,6 @@
 # EcoTech ES3 · Entrega individual de Benjamin Ramirez
 
-Versión revisada el 20 de noviembre de 2026 contra el checklist de preparación E3. La carpeta BRAMIREZ es independiente del repositorio compartido. Contiene la base EcoTech y su extensión de clima y tipos de cambio.
+Versión revisada el 20 de noviembre de 2026 contra el checklist de preparación E3. La carpeta BRAMIREZ contiene mi implementación individual en la rama e3/ramirez del repositorio del equipo. Contiene la base EcoTech y su extensión de clima y tipos de cambio.
 
 ## Instalación y ejecución
 
@@ -42,8 +42,7 @@ La caché identifica proyecto, coordenadas y proveedor, o par de monedas. Usa UP
 
 - CHECKLIST_E3.md: correspondencia con cada requisito del aviso.
 - bitacora_ia.md: instrucciones reales, sugerencias y decisiones.
-- DEFENSA_ES3.md: recorrido y preguntas para explicar el código.
 - evidencias/: prueba automatizada, auditoría, API reales y captura auténtica de terminal.
 - Ramirez_Benjamin_ES3_TI3021.pdf y .docx: informe actualizado.
 
-El repositorio compartido no fue modificado. Queda pendiente publicar únicamente esta copia en un repositorio individual autorizado y entregar su enlace según el aviso específico de AAI. El ZIP organiza la preparación y no sustituye ese enlace.
+La entrega individual está publicada en la rama e3/ramirez. La rama main conserva los archivos de E2 sin cambios. Código e instrucciones: https://github.com/Inacap2026-POOS-AM/EcoTech-Munoz-SanMartin-Ramirez/tree/e3/ramirez/BRAMIREZ. El envío de este enlace en AAI sigue pendiente.

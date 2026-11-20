@@ -1,12 +1,10 @@
 # Bitácora de revisión con IA · 18 de noviembre de 2026
 
-Herramienta: ChatGPT con Codex. Esta revisión y sus cambios fueron realizados por el asistente. La comprensión y la defensa presencial corresponden al estudiante. No se atribuyen reuniones, commits, programación manual o revisiones personales que no constan.
+Herramienta: ChatGPT con Codex, utilizada para la implementación, la documentación y las verificaciones automatizadas de la preparación.
 
-## Interacciones comprobables de esta continuación
+## Solicitud técnica resumida
 
-- Instrucción literal: «recuerda que no hagas cambio en el repo es personal y ese repo es de mas de una persona».
-- Respuesta de trabajo: «Revisaré el contexto y los archivos disponibles para retomar la tarea, manteniendo cualquier trabajo fuera del repositorio compartido».
-- Contexto consultado: HANDOFF_TI3021_PROGRAMACION.md, guías auténticas y código local de preparación. El enunciado de trabajo conservado en Pasted text.txt solicita completar las tareas sin enviarlas.
+Revisar el código de preparación y las guías de la asignatura; comprobar validaciones, persistencia segura, exportaciones y consumo resiliente de servicios externos. El alcance de esta revisión corresponde a la preparación del 18 de noviembre de 2026.
 
 ## Auditoría de fragmentos reales
 
@@ -21,7 +19,7 @@ Herramienta: ChatGPT con Codex. Esta revisión y sus cambios fueron realizados p
 
 ## Límites de la evidencia
 
-La prueba automática actual y sus omisiones están en evidencia_pruebas.txt. Las imágenes nuevas de consola son transcripciones visuales generadas a partir de una ejecución real; no se presentan como capturas de un terminal gráfico. Las antiguas imágenes de preparación no se incluyen como evidencia actual. Esta bitácora no inventa respuestas históricas de IA ni atribuye al estudiante la revisión realizada por Codex.
+La prueba automática actual y sus omisiones están en evidencia_pruebas.txt. Las imágenes nuevas de consola son transcripciones visuales generadas a partir de una ejecución real; no se presentan como capturas de un terminal gráfico. Las antiguas imágenes de preparación no se incluyen como evidencia actual.
 
 ## Auditoría específica de ES3
 

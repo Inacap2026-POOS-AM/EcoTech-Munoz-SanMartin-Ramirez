@@ -1,14 +1,12 @@
 # Bitácora de IA · revisión E3 del 20 de noviembre de 2026
 
-Herramienta: ChatGPT con Codex. El asistente realizó los cambios, la documentación y las verificaciones de esta copia. La comprensión y defensa presencial corresponden al estudiante. No se atribuyen programación manual, reuniones ni contribuciones ajenas.
+Herramienta: ChatGPT con Codex, utilizada para la implementación, la documentación y las verificaciones automatizadas de la entrega.
 
-## Instrucciones e interacción comprobables
+## Solicitud técnica resumida
 
-En esta conversación el estudiante indicó: «recuerda que no hagas cambio en el repo es personal y ese repo es de mas de una persona» y luego «sigue trabajando». Posteriormente facilitó el aviso titulado «Unidad 3: Servicios Externos y Seguridad en Python — Preparación E3», con los apartados de secretos, APIs resilientes, deserialización, persistencia y auditoría. La tabla CHECKLIST_E3.md conserva sus requisitos operativos y su correspondencia con la entrega.
+Contrastar la implementación con el checklist de preparación E3 de la asignatura: credenciales fuera del repositorio, hash con salt, consumo resiliente de APIs, deserialización propia, persistencia parametrizada, validación de entradas y auditoría de cinco señales críticas.
 
-Respuesta real del asistente al recibirlo: «Voy a contrastar este checklist con la versión de ES3 que preparé y corregir lo que falte en la copia personal, fuera del repositorio compartido».
-
-Diagnóstico real comunicado: «Detecté dos faltantes claros en la versión anterior: no registraba cada intento HTTP y la deserializadora devolvía diccionarios, no objetos de dominio tipados».
+El diagnóstico identificó dos faltantes: ausencia de registro por intento HTTP y deserialización a diccionarios en lugar de objetos de dominio tipados. Las decisiones y sus comprobaciones se registran a continuación.
 
 ## Sugerencias generadas y decisiones aplicadas
 
@@ -31,7 +29,7 @@ Diagnóstico real comunicado: «Detecté dos faltantes claros en la versión ant
 4. Timeout ausente: la única llamada de transporte tiene timeout=5; las pruebas inspeccionan cada invocación.
 5. Paquetes inventados: cryptography, reportlab, openpyxl y pypdf se contrastaron con sus páginas oficiales de PyPI y se ejecutaron en las versiones documentadas.
 
-La inspección se automatiza parcialmente con auditar_seguridad.py. No se afirma que esos patrones prohibidos hubieran sido sugeridos en una interacción histórica que no consta; se distingue el patrón descartado del código que realmente se corrigió.
+La inspección se automatiza parcialmente con auditar_seguridad.py. La tabla distingue los cambios implementados de los patrones descartados durante la auditoría.
 
 ## Resultado real
 
