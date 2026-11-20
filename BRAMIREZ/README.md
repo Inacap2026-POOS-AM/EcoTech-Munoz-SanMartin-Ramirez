@@ -45,4 +45,4 @@ La caché identifica proyecto, coordenadas y proveedor, o par de monedas. Usa UP
 - evidencias/: prueba automatizada, auditoría, API reales y captura auténtica de terminal.
 - Ramirez_Benjamin_ES3_TI3021.pdf y .docx: informe actualizado.
 
-La entrega individual está publicada en la rama e3/ramirez. La rama main conserva los archivos de E2 sin cambios. Código e instrucciones: https://github.com/Inacap2026-POOS-AM/EcoTech-Munoz-SanMartin-Ramirez/tree/e3/ramirez/BRAMIREZ. El envío de este enlace en AAI sigue pendiente.
+
